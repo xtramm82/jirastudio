@@ -3,19 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Hello Claw // Neon Grid</title>
+  <title>Hi Claw // Light Mode</title>
   <style>
     :root {
-      color-scheme: dark;
-      --bg: #03040a;
-      --panel: rgba(6, 10, 20, 0.68);
-      --line: rgba(120, 255, 248, 0.18);
-      --text: #e7fbff;
-      --muted: rgba(231, 251, 255, 0.7);
-      --cyan: #4de9ff;
-      --pink: #ff4fd8;
+      color-scheme: light;
+      --bg: #f6f7fb;
+      --panel: rgba(255, 255, 255, 0.78);
+      --line: rgba(15, 23, 42, 0.09);
+      --text: #0f172a;
+      --muted: rgba(15, 23, 42, 0.68);
+      --cyan: #2563eb;
+      --pink: #7c3aed;
       --violet: #8b5cf6;
-      --lime: #a3ff12;
+      --lime: #16a34a;
     }
 
     * { box-sizing: border-box; }
@@ -24,8 +24,8 @@
       font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: var(--text);
       background:
-        radial-gradient(circle at 50% 45%, rgba(77, 233, 255, 0.08), transparent 18%),
-        linear-gradient(180deg, #02030a 0%, #050816 46%, #02030a 100%);
+        radial-gradient(circle at 50% 45%, rgba(37, 99, 235, 0.08), transparent 18%),
+        linear-gradient(180deg, #ffffff 0%, #eef2ff 46%, #f8fafc 100%);
       overflow: hidden;
     }
 
@@ -40,41 +40,41 @@
     .scanlines {
       background: repeating-linear-gradient(
         to bottom,
-        rgba(255,255,255,0.03) 0px,
-        rgba(255,255,255,0.03) 1px,
+        rgba(15,23,42,0.03) 0px,
+        rgba(15,23,42,0.03) 1px,
         transparent 2px,
         transparent 4px
       );
-      mix-blend-mode: soft-light;
-      opacity: 0.28;
+      mix-blend-mode: multiply;
+      opacity: 0.22;
     }
 
     .noise {
-      opacity: 0.05;
-      background-image: linear-gradient(rgba(15,23,42,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(15,23,42,0.6) 1px, transparent 1px);
+      opacity: 0.04;
+      background-image: linear-gradient(rgba(15,23,42,0.22) 1px, transparent 1px), linear-gradient(90deg, rgba(15,23,42,0.22) 1px, transparent 1px);
       background-size: 32px 32px;
-      mix-blend-mode: overlay;
+      mix-blend-mode: multiply;
     }
 
     .vignette {
-      background: radial-gradient(circle at center, transparent 30%, rgba(0,0,0,0.55) 100%);
+      background: radial-gradient(circle at center, transparent 30%, rgba(15,23,42,0.12) 100%);
     }
 
     .grid {
       position: fixed;
       inset: -20%;
       background:
-        linear-gradient(rgba(14, 165, 233, 0.18) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(14, 165, 233, 0.18) 1px, transparent 1px),
-        linear-gradient(rgba(15,23,42,0.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(15,23,42,0.05) 1px, transparent 1px);
+        linear-gradient(rgba(37, 99, 235, 0.12) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(37, 99, 235, 0.12) 1px, transparent 1px),
+        linear-gradient(rgba(15,23,42,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(15,23,42,0.03) 1px, transparent 1px);
       background-size: 72px 72px, 72px 72px, 18px 18px, 18px 18px;
       background-position: 0 0, 0 0, 0 0, 0 0;
       transform: perspective(1200px) rotateX(74deg) translateY(20%);
       transform-origin: center;
       mask-image: radial-gradient(circle at center, black 28%, transparent 78%);
       animation: wireframe 16s linear infinite;
-      opacity: 0.6;
+      opacity: 0.32;
     }
 
     .glow {
@@ -82,7 +82,7 @@
       border-radius: 50%;
       filter: blur(12px);
       animation: float 12s ease-in-out infinite;
-      opacity: 0.25;
+      opacity: 0.22;
     }
 
     .glow.a {
@@ -90,8 +90,8 @@
       height: 240px;
       left: 8%;
       top: 14%;
-      background: radial-gradient(circle, rgba(77, 233, 255, 0.95), rgba(77, 233, 255, 0.02));
-      box-shadow: 0 0 60px rgba(77, 233, 255, 0.25);
+      background: radial-gradient(circle, rgba(37, 99, 235, 0.55), rgba(37, 99, 235, 0.02));
+      box-shadow: 0 0 60px rgba(37, 99, 235, 0.16);
     }
 
     .glow.b {
@@ -99,10 +99,10 @@
       height: 300px;
       right: 2%;
       top: 8%;
-      background: radial-gradient(circle, rgba(255, 79, 216, 0.85), rgba(255, 79, 216, 0.02));
+      background: radial-gradient(circle, rgba(124, 58, 237, 0.5), rgba(124, 58, 237, 0.02));
       animation-duration: 16s;
       animation-delay: -4s;
-      box-shadow: 0 0 70px rgba(255, 79, 216, 0.2);
+      box-shadow: 0 0 70px rgba(124, 58, 237, 0.14);
     }
 
     .glow.c {
@@ -110,10 +110,10 @@
       height: 220px;
       left: 58%;
       bottom: -4%;
-      background: radial-gradient(circle, rgba(163, 255, 18, 0.55), rgba(163, 255, 18, 0.02));
+      background: radial-gradient(circle, rgba(22, 163, 74, 0.4), rgba(22, 163, 74, 0.02));
       animation-duration: 14s;
       animation-delay: -8s;
-      box-shadow: 0 0 50px rgba(163, 255, 18, 0.12);
+      box-shadow: 0 0 50px rgba(22, 163, 74, 0.1);
     }
 
     main {
@@ -130,10 +130,10 @@
       padding: 1rem;
       border: 1px solid var(--line);
       border-radius: 26px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+      background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(255,255,255,0.68));
       box-shadow:
-        0 0 0 1px rgba(77, 233, 255, 0.08) inset,
-        0 24px 90px rgba(0, 0, 0, 0.48);
+        0 0 0 1px rgba(15, 23, 42, 0.04) inset,
+        0 24px 90px rgba(15, 23, 42, 0.12);
       position: relative;
     }
 
@@ -143,7 +143,7 @@
       inset: 0;
       border-radius: 26px;
       padding: 1px;
-      background: linear-gradient(135deg, rgba(77,233,255,0.45), rgba(255,79,216,0.34), rgba(163,255,18,0.22));
+      background: linear-gradient(135deg, rgba(37,99,235,0.22), rgba(124,58,237,0.16), rgba(22,163,74,0.12));
       -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
       -webkit-mask-composite: xor;
       mask-composite: exclude;
@@ -154,7 +154,7 @@
     .panel {
       border-radius: 20px;
       background: var(--panel);
-      backdrop-filter: blur(18px) saturate(145%);
+      backdrop-filter: blur(18px) saturate(120%);
       padding: clamp(2rem, 5vw, 4.2rem);
       position: relative;
       overflow: hidden;
@@ -164,7 +164,7 @@
       content: "";
       position: absolute;
       inset: -40% -20%;
-      background: linear-gradient(115deg, transparent 35%, rgba(77, 233, 255, 0.08) 50%, transparent 65%);
+      background: linear-gradient(115deg, transparent 35%, rgba(37, 99, 235, 0.08) 50%, transparent 65%);
       transform: translateX(-40%);
       animation: sweep 6.5s ease-in-out infinite;
       pointer-events: none;
@@ -194,16 +194,16 @@
       height: 10px;
       border-radius: 50%;
       background: var(--lime);
-      box-shadow: 0 0 18px rgba(163, 255, 18, 0.9);
+      box-shadow: 0 0 18px rgba(22, 163, 74, 0.45);
       animation: pulse 1.6s ease-in-out infinite;
     }
 
     .tag {
       padding: 0.45rem 0.8rem;
-      border: 1px solid rgba(77, 233, 255, 0.22);
+      border: 1px solid rgba(15, 23, 42, 0.08);
       border-radius: 999px;
-      background: rgba(255,255,255,0.65);
-      color: rgba(231, 251, 255, 0.82);
+      background: rgba(255,255,255,0.82);
+      color: rgba(15, 23, 42, 0.72);
     }
 
     h1 {
@@ -213,8 +213,8 @@
       letter-spacing: -0.08em;
       text-transform: uppercase;
       text-shadow:
-        0 0 12px rgba(77, 233, 255, 0.38),
-        0 0 32px rgba(255, 79, 216, 0.18);
+        0 0 12px rgba(37, 99, 235, 0.16),
+        0 0 32px rgba(124, 58, 237, 0.08);
       position: relative;
       display: inline-block;
       animation: titleFlicker 3.8s infinite steps(1, end);
@@ -232,14 +232,14 @@
 
     h1::before {
       transform: translate(2px, 0);
-      color: rgba(77, 233, 255, 0.85);
+      color: rgba(37, 99, 235, 0.78);
       clip-path: inset(0 0 56% 0);
       animation: glitchTop 2.8s infinite linear alternate-reverse;
     }
 
     h1::after {
       transform: translate(-2px, 0);
-      color: rgba(255, 79, 216, 0.82);
+      color: rgba(124, 58, 237, 0.76);
       clip-path: inset(48% 0 0 0);
       animation: glitchBottom 2.1s infinite linear alternate-reverse;
     }
@@ -262,10 +262,10 @@
     .chip {
       padding: 0.65rem 0.95rem;
       border-radius: 999px;
-      border: 1px solid rgba(77, 233, 255, 0.18);
-      background: rgba(8, 12, 24, 0.7);
-      color: rgba(231, 251, 255, 0.84);
-      box-shadow: 0 0 0 1px rgba(255,255,255,0.03) inset;
+      border: 1px solid rgba(37, 99, 235, 0.12);
+      background: rgba(255, 255, 255, 0.82);
+      color: rgba(15, 23, 42, 0.78);
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.7) inset;
     }
 
     .bars {
@@ -280,7 +280,7 @@
       width: 10px;
       border-radius: 999px;
       background: linear-gradient(180deg, var(--cyan), var(--pink));
-      box-shadow: 0 0 18px rgba(77, 233, 255, 0.2);
+      box-shadow: 0 0 18px rgba(37, 99, 235, 0.14);
       animation: equalize 1.8s ease-in-out infinite;
     }
 
@@ -294,9 +294,9 @@
       position: absolute;
       width: 22px;
       height: 22px;
-      border-color: rgba(77, 233, 255, 0.45);
+      border-color: rgba(37, 99, 235, 0.22);
       border-style: solid;
-      filter: drop-shadow(0 0 8px rgba(77, 233, 255, 0.18));
+      filter: drop-shadow(0 0 8px rgba(37, 99, 235, 0.08));
     }
 
     .corner.tl { left: 14px; top: 14px; border-width: 2px 0 0 2px; }
@@ -382,16 +382,15 @@
           <div class="tag">PORT 8080 / READY</div>
         </div>
 
-        <h1 data-text="Hi
-Claw">Hi<br>Claw</h1>
+        <h1 data-text="Hi\nClaw">Hi<br>Claw</h1>
         <p class="subtitle">
           Hi Claw.
         </p>
 
         <div class="chips">
-          <span class="chip">Cyberpunk UI</span>
-          <span class="chip">Animated background</span>
-          <span class="chip">Glass panel</span>
+          <span class="chip">Light UI</span>
+          <span class="chip">White base</span>
+          <span class="chip">Soft glass panel</span>
         </div>
 
         <div class="bars" aria-hidden="true">
