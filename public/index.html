@@ -3,19 +3,23 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Hi Claw // Light Mode</title>
+  <title>MQTT Control // Mosquitto</title>
   <style>
     :root {
       color-scheme: light;
-      --bg: #f6f7fb;
-      --panel: rgba(255, 255, 255, 0.78);
-      --line: rgba(15, 23, 42, 0.09);
+      --bg: #f4f7fb;
+      --panel: rgba(255, 255, 255, 0.82);
+      --panel-strong: rgba(255, 255, 255, 0.96);
+      --line: rgba(15, 23, 42, 0.08);
       --text: #0f172a;
-      --muted: rgba(15, 23, 42, 0.68);
-      --cyan: #2563eb;
-      --pink: #7c3aed;
-      --violet: #8b5cf6;
-      --lime: #16a34a;
+      --muted: rgba(15, 23, 42, 0.65);
+      --accent: #2563eb;
+      --accent-2: #7c3aed;
+      --good: #16a34a;
+      --warn: #ca8a04;
+      --bad: #dc2626;
+      --shadow: 0 18px 50px rgba(15, 23, 42, 0.12);
+      --radius: 20px;
     }
 
     * { box-sizing: border-box; }
@@ -24,385 +28,398 @@
       font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: var(--text);
       background:
-        radial-gradient(circle at 50% 45%, rgba(37, 99, 235, 0.08), transparent 18%),
-        linear-gradient(180deg, #ffffff 0%, #eef2ff 46%, #f8fafc 100%);
-      overflow: hidden;
+        radial-gradient(circle at top, rgba(37,99,235,0.08), transparent 28%),
+        linear-gradient(180deg, #ffffff 0%, #eef2ff 100%);
     }
 
-    .scanlines,
-    .noise,
-    .vignette {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-    }
-
-    .scanlines {
-      background: repeating-linear-gradient(
-        to bottom,
-        rgba(15,23,42,0.03) 0px,
-        rgba(15,23,42,0.03) 1px,
-        transparent 2px,
-        transparent 4px
-      );
-      mix-blend-mode: multiply;
-      opacity: 0.22;
-    }
-
-    .noise {
-      opacity: 0.04;
-      background-image: linear-gradient(rgba(15,23,42,0.22) 1px, transparent 1px), linear-gradient(90deg, rgba(15,23,42,0.22) 1px, transparent 1px);
-      background-size: 32px 32px;
-      mix-blend-mode: multiply;
-    }
-
-    .vignette {
-      background: radial-gradient(circle at center, transparent 30%, rgba(15,23,42,0.12) 100%);
-    }
-
-    .grid {
-      position: fixed;
-      inset: -20%;
-      background:
-        linear-gradient(rgba(37, 99, 235, 0.12) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(37, 99, 235, 0.12) 1px, transparent 1px),
-        linear-gradient(rgba(15,23,42,0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(15,23,42,0.03) 1px, transparent 1px);
-      background-size: 72px 72px, 72px 72px, 18px 18px, 18px 18px;
-      background-position: 0 0, 0 0, 0 0, 0 0;
-      transform: perspective(1200px) rotateX(74deg) translateY(20%);
-      transform-origin: center;
-      mask-image: radial-gradient(circle at center, black 28%, transparent 78%);
-      animation: wireframe 16s linear infinite;
-      opacity: 0.32;
-    }
-
-    .glow {
-      position: fixed;
-      border-radius: 50%;
-      filter: blur(12px);
-      animation: float 12s ease-in-out infinite;
-      opacity: 0.22;
-    }
-
-    .glow.a {
-      width: 240px;
-      height: 240px;
-      left: 8%;
-      top: 14%;
-      background: radial-gradient(circle, rgba(37, 99, 235, 0.55), rgba(37, 99, 235, 0.02));
-      box-shadow: 0 0 60px rgba(37, 99, 235, 0.16);
-    }
-
-    .glow.b {
-      width: 300px;
-      height: 300px;
-      right: 2%;
-      top: 8%;
-      background: radial-gradient(circle, rgba(124, 58, 237, 0.5), rgba(124, 58, 237, 0.02));
-      animation-duration: 16s;
-      animation-delay: -4s;
-      box-shadow: 0 0 70px rgba(124, 58, 237, 0.14);
-    }
-
-    .glow.c {
-      width: 220px;
-      height: 220px;
-      left: 58%;
-      bottom: -4%;
-      background: radial-gradient(circle, rgba(22, 163, 74, 0.4), rgba(22, 163, 74, 0.02));
-      animation-duration: 14s;
-      animation-delay: -8s;
-      box-shadow: 0 0 50px rgba(22, 163, 74, 0.1);
-    }
-
-    main {
-      position: relative;
-      z-index: 1;
+    .wrap {
       min-height: 100vh;
+      padding: 24px;
       display: grid;
-      place-items: center;
-      padding: 2rem;
+      gap: 18px;
+      grid-template-columns: 1.1fr 0.9fr;
+      align-items: start;
     }
 
-    .frame {
-      width: min(860px, 100%);
-      padding: 1rem;
-      border: 1px solid var(--line);
-      border-radius: 26px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(255,255,255,0.68));
-      box-shadow:
-        0 0 0 1px rgba(15, 23, 42, 0.04) inset,
-        0 24px 90px rgba(15, 23, 42, 0.12);
-      position: relative;
-    }
-
-    .frame::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      border-radius: 26px;
-      padding: 1px;
-      background: linear-gradient(135deg, rgba(37,99,235,0.22), rgba(124,58,237,0.16), rgba(22,163,74,0.12));
-      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-      -webkit-mask-composite: xor;
-      mask-composite: exclude;
-      pointer-events: none;
-      opacity: 0.8;
-    }
-
-    .panel {
-      border-radius: 20px;
+    .hero, .card, .modal {
       background: var(--panel);
-      backdrop-filter: blur(18px) saturate(120%);
-      padding: clamp(2rem, 5vw, 4.2rem);
-      position: relative;
-      overflow: hidden;
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+      backdrop-filter: blur(16px) saturate(140%);
     }
 
-    .panel::after {
-      content: "";
-      position: absolute;
-      inset: -40% -20%;
-      background: linear-gradient(115deg, transparent 35%, rgba(37, 99, 235, 0.08) 50%, transparent 65%);
-      transform: translateX(-40%);
-      animation: sweep 6.5s ease-in-out infinite;
-      pointer-events: none;
-    }
-
-    .hud {
+    .hero {
+      grid-column: 1 / -1;
+      padding: 22px 24px;
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      gap: 1rem;
-      flex-wrap: wrap;
-      margin-bottom: 1.5rem;
-      color: var(--muted);
-      font-size: 0.92rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
+      gap: 16px;
+      align-items: center;
     }
+
+    .title {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    h1 { margin: 0; font-size: clamp(1.8rem, 3vw, 2.6rem); letter-spacing: -0.04em; }
+    .subtitle { color: var(--muted); font-size: 0.96rem; }
 
     .status {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.65rem;
-    }
-
-    .led {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: var(--lime);
-      box-shadow: 0 0 18px rgba(22, 163, 74, 0.45);
-      animation: pulse 1.6s ease-in-out infinite;
-    }
-
-    .tag {
-      padding: 0.45rem 0.8rem;
-      border: 1px solid rgba(15, 23, 42, 0.08);
+      padding: 10px 14px;
       border-radius: 999px;
-      background: rgba(255,255,255,0.82);
-      color: rgba(15, 23, 42, 0.72);
+      background: rgba(22, 163, 74, 0.08);
+      color: var(--good);
+      border: 1px solid rgba(22, 163, 74, 0.16);
+      font-weight: 700;
+      white-space: nowrap;
     }
 
-    h1 {
-      margin: 0;
-      font-size: clamp(3.2rem, 12vw, 8rem);
-      line-height: 0.9;
-      letter-spacing: -0.08em;
-      text-transform: uppercase;
-      text-shadow:
-        0 0 12px rgba(37, 99, 235, 0.16),
-        0 0 32px rgba(124, 58, 237, 0.08);
-      position: relative;
-      display: inline-block;
-      animation: titleFlicker 3.8s infinite steps(1, end);
+    .card {
+      padding: 18px;
     }
 
-    h1::before,
-    h1::after {
-      content: attr(data-text);
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      overflow: hidden;
-      mix-blend-mode: screen;
+    .section-title {
+      margin: 0 0 14px;
+      font-size: 1rem;
+      letter-spacing: 0.02em;
     }
 
-    h1::before {
-      transform: translate(2px, 0);
-      color: rgba(37, 99, 235, 0.78);
-      clip-path: inset(0 0 56% 0);
-      animation: glitchTop 2.8s infinite linear alternate-reverse;
+    .grid-form {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    h1::after {
-      transform: translate(-2px, 0);
-      color: rgba(124, 58, 237, 0.76);
-      clip-path: inset(48% 0 0 0);
-      animation: glitchBottom 2.1s infinite linear alternate-reverse;
+    label { display: grid; gap: 6px; font-size: 0.9rem; color: var(--muted); }
+    input, textarea, button, select {
+      font: inherit;
+      border-radius: 14px;
+      border: 1px solid rgba(15,23,42,0.12);
+      background: var(--panel-strong);
+      color: var(--text);
+      padding: 12px 14px;
+      outline: none;
     }
+    textarea { min-height: 110px; resize: vertical; grid-column: 1 / -1; }
+    input:focus, textarea:focus, select:focus { border-color: rgba(37,99,235,0.55); box-shadow: 0 0 0 4px rgba(37,99,235,0.12); }
 
-    .subtitle {
-      margin: 1.1rem 0 0;
-      max-width: 46rem;
-      color: var(--muted);
-      line-height: 1.7;
-      font-size: clamp(1rem, 2vw, 1.15rem);
-    }
-
-    .chips {
+    .actions {
       display: flex;
-      gap: 0.75rem;
+      gap: 10px;
       flex-wrap: wrap;
-      margin-top: 1.8rem;
+      margin-top: 10px;
     }
 
-    .chip {
-      padding: 0.65rem 0.95rem;
-      border-radius: 999px;
-      border: 1px solid rgba(37, 99, 235, 0.12);
-      background: rgba(255, 255, 255, 0.82);
-      color: rgba(15, 23, 42, 0.78);
-      box-shadow: 0 0 0 1px rgba(255,255,255,0.7) inset;
+    button {
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: white;
+      border: none;
+    }
+    .ghost { background: rgba(255,255,255,0.9); }
+    .danger { background: rgba(220,38,38,0.08); color: var(--bad); }
+
+    .list {
+      display: grid;
+      gap: 10px;
     }
 
-    .bars {
-      margin-top: 2rem;
+    .topic {
       display: flex;
-      gap: 0.5rem;
-      align-items: end;
-      height: 56px;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 14px;
+      border: 1px solid rgba(15,23,42,0.08);
+      border-radius: 16px;
+      background: rgba(255,255,255,0.92);
     }
 
-    .bar {
-      width: 10px;
+    .topic code { font-weight: 700; }
+    .meta { color: var(--muted); font-size: 0.9rem; }
+    .pill {
+      padding: 6px 10px;
       border-radius: 999px;
-      background: linear-gradient(180deg, var(--cyan), var(--pink));
-      box-shadow: 0 0 18px rgba(37, 99, 235, 0.14);
-      animation: equalize 1.8s ease-in-out infinite;
+      background: rgba(37,99,235,0.08);
+      color: var(--accent);
+      font-weight: 700;
+      min-width: 56px;
+      text-align: center;
     }
 
-    .bar:nth-child(2) { animation-delay: 0.15s; }
-    .bar:nth-child(3) { animation-delay: 0.3s; }
-    .bar:nth-child(4) { animation-delay: 0.45s; }
-    .bar:nth-child(5) { animation-delay: 0.6s; }
-    .bar:nth-child(6) { animation-delay: 0.75s; }
+    .small { font-size: 0.88rem; color: var(--muted); }
+    .mono { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
 
-    .corner {
-      position: absolute;
-      width: 22px;
-      height: 22px;
-      border-color: rgba(37, 99, 235, 0.22);
-      border-style: solid;
-      filter: drop-shadow(0 0 8px rgba(37, 99, 235, 0.08));
+    .footer-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15,23,42,0.42);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
     }
 
-    .corner.tl { left: 14px; top: 14px; border-width: 2px 0 0 2px; }
-    .corner.tr { right: 14px; top: 14px; border-width: 2px 2px 0 0; }
-    .corner.bl { left: 14px; bottom: 14px; border-width: 0 0 2px 2px; }
-    .corner.br { right: 14px; bottom: 14px; border-width: 0 2px 2px 0; }
-
-    @keyframes float {
-      0%, 100% { transform: translate3d(0,0,0) scale(1); }
-      50% { transform: translate3d(0,-22px,0) scale(1.06); }
+    .modal {
+      width: min(900px, 100%);
+      max-height: 85vh;
+      overflow: auto;
+      padding: 18px;
+      background: rgba(255,255,255,0.98);
     }
 
-    @keyframes wireframe {
-      from { background-position: 0 0, 0 0, 0 0, 0 0; }
-      to { background-position: 72px 72px, -72px 72px, 18px 18px, -18px 18px; }
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
     }
 
-    @keyframes sweep {
-      0%, 45% { transform: translateX(-42%) skewX(-15deg); opacity: 0; }
-      55% { opacity: 0.9; }
-      100% { transform: translateX(42%) skewX(-15deg); opacity: 0; }
+    .msg {
+      padding: 12px 14px;
+      border: 1px solid rgba(15,23,42,0.08);
+      border-radius: 14px;
+      background: rgba(248,250,252,0.9);
+      margin-bottom: 10px;
     }
 
-    @keyframes pulse {
-      0%, 100% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.35); opacity: 0.7; }
-    }
+    .msg .row { display: flex; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 0.86rem; margin-bottom: 6px; }
+    .msg pre { margin: 0; white-space: pre-wrap; word-break: break-word; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
 
-    @keyframes titleFlicker {
-      0%, 100% { opacity: 1; }
-      92% { opacity: 1; }
-      93% { opacity: 0.78; }
-      94% { opacity: 1; }
-      96% { opacity: 0.88; }
-      97% { opacity: 1; }
-    }
-
-    @keyframes glitchTop {
-      0% { clip-path: inset(0 0 58% 0); transform: translate(2px, 0); }
-      20% { clip-path: inset(8% 0 48% 0); transform: translate(4px, -1px); }
-      40% { clip-path: inset(0 0 62% 0); transform: translate(1px, 1px); }
-      60% { clip-path: inset(5% 0 44% 0); transform: translate(5px, 0); }
-      80% { clip-path: inset(2% 0 54% 0); transform: translate(3px, -1px); }
-      100% { clip-path: inset(0 0 58% 0); transform: translate(2px, 0); }
-    }
-
-    @keyframes glitchBottom {
-      0% { clip-path: inset(46% 0 0 0); transform: translate(-2px, 0); }
-      25% { clip-path: inset(52% 0 0 0); transform: translate(-5px, 1px); }
-      50% { clip-path: inset(40% 0 0 0); transform: translate(-1px, -1px); }
-      75% { clip-path: inset(56% 0 0 0); transform: translate(-4px, 0); }
-      100% { clip-path: inset(46% 0 0 0); transform: translate(-2px, 0); }
-    }
-
-    @keyframes equalize {
-      0%, 100% { height: 16px; }
-      50% { height: 54px; }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { animation: none !important; }
+    @media (max-width: 980px) {
+      .wrap { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
-  <div class="grid"></div>
-  <div class="glow a"></div>
-  <div class="glow b"></div>
-  <div class="glow c"></div>
-  <div class="scanlines"></div>
-  <div class="noise"></div>
-  <div class="vignette"></div>
-
-  <main>
-    <section class="frame">
-      <div class="corner tl"></div>
-      <div class="corner tr"></div>
-      <div class="corner bl"></div>
-      <div class="corner br"></div>
-      <div class="panel">
-        <div class="hud">
-          <div class="status"><span class="led"></span> SYSTEM ONLINE</div>
-          <div class="tag">PORT 8080 / READY</div>
-        </div>
-
-        <h1 data-text="Hi\nClaw">Hi<br>Claw</h1>
-        <p class="subtitle">
-          Hi Claw.
-        </p>
-
-        <div class="chips">
-          <span class="chip">Light UI</span>
-          <span class="chip">White base</span>
-          <span class="chip">Soft glass panel</span>
-        </div>
-
-        <div class="bars" aria-hidden="true">
-          <span class="bar"></span>
-          <span class="bar"></span>
-          <span class="bar"></span>
-          <span class="bar"></span>
-          <span class="bar"></span>
-          <span class="bar"></span>
-        </div>
+  <div class="wrap">
+    <header class="hero">
+      <div class="title">
+        <h1>MQTT Control</h1>
+        <div class="subtitle">Mosquitto dashboard: pubblica messaggi, osserva topic e apri popup con i messaggi raccolti per ogni coda/topic.</div>
       </div>
+      <div class="status" id="connStatus">Broker: non connesso</div>
+    </header>
+
+    <section class="card">
+      <h2 class="section-title">Invia messaggio</h2>
+      <div class="grid-form">
+        <label>
+          Broker host
+          <input id="host" value="localhost" />
+        </label>
+        <label>
+          Broker porta
+          <input id="port" value="1883" />
+        </label>
+        <label>
+          Topic
+          <input id="topic" placeholder="es. lab/sensori/temp" />
+        </label>
+        <label>
+          QoS
+          <select id="qos">
+            <option value="0">0</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+          </select>
+        </label>
+        <label style="grid-column:1 / -1">
+          Messaggio
+          <textarea id="payload" placeholder="Scrivi qui il messaggio da pubblicare"></textarea>
+        </label>
+      </div>
+      <div class="actions">
+        <button class="primary" id="publishBtn">Pubblica</button>
+        <button class="ghost" id="subscribeBtn">Sottoscrivi topic</button>
+        <button class="danger" id="clearBtn">Pulisci registri</button>
+      </div>
+      <div class="small" id="publishInfo">Suggerimento: usa topic stabili se vuoi vederli comparire nell'elenco.</div>
     </section>
-  </main>
+
+    <section class="card">
+      <h2 class="section-title">Topic osservati</h2>
+      <div class="list" id="topics"></div>
+      <div class="footer-actions">
+        <button class="ghost" id="refreshBtn">Aggiorna elenco</button>
+      </div>
+      <div class="small">Il conteggio è dei messaggi osservati dalla dashboard, non della profondità interna assoluta del broker.</div>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal">
+      <div class="modal-head">
+        <div>
+          <div class="section-title" id="modalTitle">Messaggi</div>
+          <div class="small mono" id="modalTopic"></div>
+        </div>
+        <button class="ghost" id="closeModal">Chiudi</button>
+      </div>
+      <div id="modalMessages"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import mqtt from 'https://cdn.jsdelivr.net/npm/mqtt/dist/mqtt.esm.min.js';
+
+    const state = {
+      client: null,
+      topics: new Map(),
+      currentFilter: '*'
+    };
+
+    const el = (id) => document.getElementById(id);
+    const connStatus = el('connStatus');
+    const topicsEl = el('topics');
+    const modalBackdrop = el('modalBackdrop');
+    const modalTitle = el('modalTitle');
+    const modalTopic = el('modalTopic');
+    const modalMessages = el('modalMessages');
+
+    const save = () => {
+      const data = [...state.topics.entries()].map(([topic, item]) => ({ topic, messages: item.messages }));
+      localStorage.setItem('mqtt-dashboard-topics', JSON.stringify(data));
+    };
+
+    const load = () => {
+      try {
+        const data = JSON.parse(localStorage.getItem('mqtt-dashboard-topics') || '[]');
+        for (const item of data) {
+          state.topics.set(item.topic, { messages: item.messages || [] });
+        }
+      } catch {}
+    };
+
+    const ensureTopic = (topic) => {
+      if (!state.topics.has(topic)) state.topics.set(topic, { messages: [] });
+      return state.topics.get(topic);
+    };
+
+    const render = () => {
+      const entries = [...state.topics.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+      topicsEl.innerHTML = entries.length ? '' : '<div class="small">Nessun topic osservato ancora.</div>';
+      for (const [topic, item] of entries) {
+        const last = item.messages[item.messages.length - 1];
+        const div = document.createElement('div');
+        div.className = 'topic';
+        div.innerHTML = `
+          <div>
+            <div><code>${escapeHtml(topic)}</code></div>
+            <div class="meta">Ultimo: ${last ? escapeHtml(last.payload.slice(0, 100)) : '—'}</div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <div class="pill">${item.messages.length}</div>
+            <button class="ghost" data-open="${escapeAttr(topic)}">Apri</button>
+          </div>
+        `;
+        div.querySelector('[data-open]')?.addEventListener('click', () => openModal(topic));
+        topicsEl.appendChild(div);
+      }
+      save();
+    };
+
+    const openModal = (topic) => {
+      const item = state.topics.get(topic);
+      if (!item) return;
+      modalTitle.textContent = `Messaggi in ${topic}`;
+      modalTopic.textContent = `${item.messages.length} messaggi osservati`;
+      modalMessages.innerHTML = item.messages.length
+        ? item.messages.map((m, i) => `
+            <div class="msg">
+              <div class="row"><span>#${i + 1}</span><span>${new Date(m.ts).toLocaleString()}</span></div>
+              <pre>${escapeHtml(m.payload)}</pre>
+            </div>
+          `).join('')
+        : '<div class="small">Nessun messaggio presente.</div>';
+      modalBackdrop.style.display = 'flex';
+    };
+
+    const closeModal = () => modalBackdrop.style.display = 'none';
+
+    const setConn = (text, good = false) => {
+      connStatus.textContent = text;
+      connStatus.style.background = good ? 'rgba(22, 163, 74, 0.08)' : 'rgba(202,138,4,0.08)';
+      connStatus.style.color = good ? 'var(--good)' : 'var(--warn)';
+      connStatus.style.borderColor = good ? 'rgba(22,163,74,0.16)' : 'rgba(202,138,4,0.18)';
+    };
+
+    const connect = () => {
+      const host = el('host').value.trim();
+      const port = el('port').value.trim();
+      const url = `ws://${host}:${port}/mqtt`;
+      if (state.client) state.client.end(true);
+      state.client = mqtt.connect(url, { reconnectPeriod: 3000, clean: true });
+
+      state.client.on('connect', () => {
+        setConn(`Broker connesso: ${url}`, true);
+        state.client.subscribe('#');
+      });
+      state.client.on('reconnect', () => setConn('Riconnessione in corso...'));
+      state.client.on('error', () => setConn('Errore connessione broker'));
+      state.client.on('message', (topic, payload) => {
+        const text = payload.toString();
+        const item = ensureTopic(topic);
+        item.messages.push({ ts: Date.now(), payload: text });
+        render();
+        if (state.currentFilter === topic) openModal(topic);
+      });
+    };
+
+    const publish = () => {
+      const topic = el('topic').value.trim();
+      const payload = el('payload').value;
+      const qos = Number(el('qos').value);
+      if (!topic) return alert('Inserisci un topic.');
+      if (!state.client || !state.client.connected) connect();
+      state.client.publish(topic, payload, { qos, retain: false });
+      const item = ensureTopic(topic);
+      item.messages.push({ ts: Date.now(), payload });
+      render();
+      el('publishInfo').textContent = `Pubblicato su ${topic} con QoS ${qos}.`;
+    };
+
+    const subscribe = () => {
+      const topic = el('topic').value.trim();
+      if (!topic) return alert('Inserisci un topic da sottoscrivere.');
+      if (!state.client || !state.client.connected) connect();
+      state.client.subscribe(topic);
+      ensureTopic(topic);
+      render();
+      el('publishInfo').textContent = `Sottoscritto ${topic}.`;
+    };
+
+    const clearAll = () => {
+      state.topics.clear();
+      localStorage.removeItem('mqtt-dashboard-topics');
+      render();
+      el('publishInfo').textContent = 'Registri puliti.';
+    };
+
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>'"]/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[c]));
+    }
+    function escapeAttr(str) { return String(str).replace(/"/g, '&quot;'); }
+
+    load();
+    render();
+    connect();
+
+    el('publishBtn').addEventListener('click', publish);
+    el('subscribeBtn').addEventListener('click', subscribe);
+    el('clearBtn').addEventListener('click', clearAll);
+    el('refreshBtn').addEventListener('click', render);
+    el('closeModal').addEventListener('click', closeModal);
+    modalBackdrop.addEventListener('click', (e) => { if (e.target === modalBackdrop) closeModal(); });
+  </script>
 </body>
 </html>
