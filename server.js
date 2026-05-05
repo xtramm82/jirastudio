@@ -28,9 +28,16 @@ function setReports(reports) { saveJson(REPORTS_FILE, reports); }
 function authHeader(cfg) {
   return 'Basic ' + Buffer.from(`${cfg.jiraUser}:${cfg.jiraToken}`).toString('base64');
 }
-function normalizeBaseUrl(url) { return String(url || '').trim().replace(/\/$/, ''); }
+function normalizeBaseUrl(url) {
+  const raw = String(url || '').trim().replace(/\/$/, '');
+  if (!raw) return '';
+  if (/^https?:\/\//i.test(raw)) return raw;
+  return `https://${raw}`;
+}
 async function jiraFetch(cfg, jiraPath, options = {}) {
-  const url = `${normalizeBaseUrl(cfg.jiraBaseUrl)}/rest/api/${cfg.jiraApiVersion || '3'}${jiraPath}`;
+  const base = normalizeBaseUrl(cfg.jiraBaseUrl);
+  if (!base) throw new Error('Missing Jira base URL');
+  const url = `${base}/rest/api/${cfg.jiraApiVersion || '3'}${jiraPath}`;
   const res = await fetch(url, {
     ...options,
     headers: {
