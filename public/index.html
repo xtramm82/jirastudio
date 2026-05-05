@@ -242,7 +242,6 @@
       <h2 class="section-title">Esegui report</h2>
       <div class="actions">
         <button class="primary" id="runSelectedBtn">Esegui selezionati</button>
-        <button class="ghost" id="testSelectedBtn">Test</button>
         <button class="ghost" id="selectAllBtn">Seleziona tutto</button>
         <button class="ghost" id="clearSelectionBtn">Deseleziona</button>
       </div>
@@ -597,7 +596,6 @@
     el('exportReportsBtn').onclick = exportReports;
     el('importReportsBtn').onclick = importReports;
     el('runSelectedBtn').onclick = () => runSelected(false);
-    el('testSelectedBtn').onclick = () => runSelected(true);
     el('selectAllBtn').onclick = () => { state.selected = new Set(state.reports.map(r => r.id)); renderChooser(); };
     el('clearSelectionBtn').onclick = () => { state.selected.clear(); renderChooser(); };
     el('resetAllBtn').onclick = resetAll;
