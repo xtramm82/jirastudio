@@ -130,6 +130,29 @@
       color: var(--accent); font-weight: 700; min-width: 56px; text-align: center;
     }
     .muted-box { padding: 12px 14px; border: 1px dashed rgba(15,23,42,0.16); border-radius: 16px; color: var(--muted); background: rgba(255,255,255,0.7); }
+    .results-section {
+      margin-top: 20px;
+      padding-top: 18px;
+      border-top: 1px solid rgba(15,23,42,0.1);
+      display: grid;
+      gap: 12px;
+    }
+    .results-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .results-title {
+      margin: 0;
+      font-size: 0.98rem;
+      letter-spacing: 0.02em;
+    }
+    .results-subtitle {
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
     @media (max-width: 980px) { .grid-form { grid-template-columns: 1fr; } }
   </style>
 </head>
@@ -218,7 +241,13 @@
       </div>
       <div class="small">Questa schermata usa il backend locale, che a sua volta chiama la Jira Search API aggiornata con paginazione token-based.</div>
       <div style="margin-top:14px" class="list" id="runChooser"></div>
-      <div style="margin-top:18px" id="resultPanels"></div>
+      <div class="results-section">
+        <div class="results-header">
+          <h3 class="results-title">Risultati</h3>
+          <div class="results-subtitle">Ogni report si espande al click sul titolo.</div>
+        </div>
+        <div id="resultPanels"></div>
+      </div>
     </section>
   </div>
 
@@ -484,7 +513,7 @@
         state.results = dryRun
           ? (data.preview || []).map(p => ({ id: p.id, title: p.title, jql: p.jql, count: 0, issues: [], request: p.request, dryRun: true }))
           : (data.results || []);
-        state.expandedResults = new Set(state.results.map(r => r.id));
+        state.expandedResults = new Set();
         renderResults();
         setStatus(dryRun ? 'Anteprima pronta' : 'Report completati', true);
         state.page = 'run'; renderNav();
