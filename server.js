@@ -105,9 +105,21 @@ app.delete('/api/reports/:id', (req, res) => {
   res.json({ ok: true });
 });
 
+function buildJiraSearchRequest(cfg, report) {
+  const base = normalizeBaseUrl(cfg.jiraBaseUrl);
+  const url = `${base}/rest/api/3/search/jql`;
+  const body = {
+    jql: report.jql,
+    maxResults: Number(cfg.jiraPageSize || 50),
+    fields: ['summary', 'status', 'assignee', 'updated', 'priority', 'issuetype']
+  };
+  return { url, body };
+}
+
 app.post('/api/reports/run', async (req, res) => {
   const cfg = req.body?.config || getConfig();
   const reportIds = Array.isArray(req.body?.reportIds) ? req.body.reportIds : [];
+  const dryRun = !!req.body?.dryRun;
   const allReports = getReports();
   const reports = allReports.filter(r => reportIds.includes(r.id));
   if (!reports.length) {
@@ -120,21 +132,25 @@ app.post('/api/reports/run', async (req, res) => {
   try {
     const results = [];
     for (const report of reports) {
-      const base = normalizeBaseUrl(cfg.jiraBaseUrl);
-      const url = `${base}/rest/api/3/search/jql`;
-      const payload = {
-        jql: report.jql,
-        maxResults: Number(cfg.jiraPageSize || 50),
-        fields: ['summary', 'status', 'assignee', 'updated', 'priority', 'issuetype']
-      };
-      const res = await fetch(url, {
+      const request = buildJiraSearchRequest(cfg, report);
+      if (dryRun) {
+        results.push({
+          id: report.id,
+          title: report.title,
+          jql: report.jql,
+          request,
+          dryRun: true
+        });
+        continue;
+      }
+      const res = await fetch(request.url, {
         method: 'POST',
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json',
           Authorization: authHeader(cfg)
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(request.body)
       });
       const text = await res.text();
       let search = null;

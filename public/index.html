@@ -212,6 +212,7 @@
       <h2 class="section-title">Esegui report e mostra i risultati in tab</h2>
       <div class="actions">
         <button class="primary" id="runSelectedBtn">Esegui selezionati</button>
+        <button class="ghost" id="testSelectedBtn">Test</button>
         <button class="ghost" id="selectAllBtn">Seleziona tutto</button>
         <button class="ghost" id="clearSelectionBtn">Deseleziona</button>
       </div>
@@ -458,25 +459,25 @@
       return r.json();
     }
 
-    async function runSelected() {
+    async function runSelected(dryRun = false) {
       const c = readConfig();
       if (!c.jiraBaseUrl || !c.jiraUser || !c.jiraToken) return setStatus('Configura Jira prima di eseguire.', false);
       const selected = state.reports.filter(r => state.selected.has(r.id));
       if (!selected.length) return alert('Seleziona almeno un report.');
-      setStatus('Esecuzione in corso...', true);
+      setStatus(dryRun ? 'Creo anteprima chiamata...' : 'Esecuzione in corso...', true);
       try {
         const reportIds = selected.map(r => r.id);
         const r = await fetch('/api/reports/run', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ config: c, reportIds })
+          body: JSON.stringify({ config: c, reportIds, dryRun })
         });
         const data = await r.json();
         if (!r.ok) throw new Error((data.error || 'Errore esecuzione report') + (data.debug ? `\nDEBUG: ${JSON.stringify(data.debug)}` : ''));
         state.results = data.results || [];
         state.activeTab = state.results[0]?.id || null;
         renderResults();
-        setStatus('Report completati', true);
+        setStatus(dryRun ? 'Anteprima pronta' : 'Report completati', true);
         state.page = 'run'; renderNav();
       } catch (e) {
         setStatus('Esecuzione fallita', false);
@@ -549,7 +550,8 @@
     el('addReportBtn').onclick = addReport;
     el('exportReportsBtn').onclick = exportReports;
     el('importReportsBtn').onclick = importReports;
-    el('runSelectedBtn').onclick = runSelected;
+    el('runSelectedBtn').onclick = () => runSelected(false);
+    el('testSelectedBtn').onclick = () => runSelected(true);
     el('selectAllBtn').onclick = () => { state.selected = new Set(state.reports.map(r => r.id)); renderChooser(); };
     el('clearSelectionBtn').onclick = () => { state.selected.clear(); renderChooser(); };
     el('resetAllBtn').onclick = resetAll;
