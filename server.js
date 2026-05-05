@@ -210,6 +210,46 @@ app.post('/api/reports/run', async (req, res) => {
   }
 });
 
+app.get('/api/issues/:key/status-history', async (req, res) => {
+  const cfg = getConfig();
+  const issueKey = String(req.params.key || '').trim();
+  if (!cfg?.jiraBaseUrl || !cfg?.jiraUser || !cfg?.jiraToken) {
+    return res.status(400).json({ ok: false, error: 'Missing Jira config' });
+  }
+  if (!issueKey) {
+    return res.status(400).json({ ok: false, error: 'Missing issue key' });
+  }
+  try {
+    const issue = await jiraFetch(cfg, `/issue/${encodeURIComponent(issueKey)}?fields=summary,status&expand=changelog`);
+    const histories = Array.isArray(issue?.changelog?.histories) ? issue.changelog.histories : [];
+    const events = histories
+      .flatMap(history => {
+        const items = Array.isArray(history?.items) ? history.items : [];
+        return items
+          .filter(item => item?.field === 'status')
+          .map(item => ({
+            at: history.created || '',
+            author: history.author?.displayName || history.author?.emailAddress || history.author?.accountId || 'Sconosciuto',
+            from: item.fromString || '—',
+            to: item.toString || '—'
+          }));
+      })
+      .sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
+
+    res.json({
+      ok: true,
+      issue: {
+        key: issue.key,
+        summary: issue.fields?.summary || '',
+        currentStatus: issue.fields?.status?.name || ''
+      },
+      events
+    });
+  } catch (err) {
+    res.status(err.status || 500).json({ ok: false, error: err.message, body: err.body, details: err.body || null });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Jira Report Studio running on http://localhost:${PORT}`);
 });

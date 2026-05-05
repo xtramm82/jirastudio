@@ -160,6 +160,71 @@
       box-shadow: 0 10px 24px rgba(15,23,42,0.06);
       backdrop-filter: blur(10px) saturate(130%);
     }
+    .table-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .link-btn {
+      border: 1px solid rgba(37,99,235,0.16);
+      background: rgba(37,99,235,0.08);
+      color: var(--accent);
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+    .modal-shell {
+      position: fixed;
+      inset: 0;
+      background: rgba(15,23,42,0.38);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      z-index: 20;
+    }
+    .modal-shell.open { display: flex; }
+    .modal {
+      width: min(820px, 100%);
+      max-height: min(85vh, 920px);
+      padding: 20px;
+      overflow: auto;
+    }
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: start;
+      margin-bottom: 14px;
+    }
+    .modal-title {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+    .timeline {
+      display: grid;
+      gap: 12px;
+    }
+    .timeline-item {
+      border: 1px solid rgba(15,23,42,0.08);
+      border-radius: 16px;
+      background: rgba(255,255,255,0.72);
+      padding: 14px;
+    }
+    .timeline-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+    .timeline-status {
+      font-weight: 700;
+    }
     @media (max-width: 980px) { .grid-form { grid-template-columns: 1fr; } }
   </style>
 </head>
@@ -260,6 +325,19 @@
     </section>
   </div>
 
+  <div class="modal-shell" id="historyModal">
+    <div class="modal">
+      <div class="modal-head">
+        <div>
+          <h3 class="modal-title" id="historyModalTitle">Status history</h3>
+          <div class="small" id="historyModalSubtitle"></div>
+        </div>
+        <button class="ghost" id="closeHistoryModalBtn">Chiudi</button>
+      </div>
+      <div id="historyModalBody" class="timeline"></div>
+    </div>
+  </div>
+
   <script type="module">
     const state = {
       page: 'run',
@@ -269,13 +347,23 @@
       reports: load('jira-studio-reports', []),
       selected: new Set(),
       results: [],
-      expandedResults: new Set()
+      expandedResults: new Set(),
+      statusHistoryCache: new Map(),
+      statusHistoryModal: {
+        open: false,
+        loading: false,
+        issueKey: '',
+        summary: '',
+        currentStatus: '',
+        events: []
+      }
     };
 
     const el = (id) => document.getElementById(id);
     const nav = el('nav');
     const connStatus = el('connStatus');
     const pages = [...document.querySelectorAll('.page')];
+    const historyModal = el('historyModal');
 
     function load(key, fallback) {
       try { return JSON.parse(localStorage.getItem(key) ?? JSON.stringify(fallback)); } catch { return fallback; }
@@ -419,6 +507,12 @@
           else state.expandedResults.add(res.id);
           renderResults();
         };
+        panel.querySelectorAll('[data-status-history]').forEach(btn => {
+          btn.onclick = async (event) => {
+            event.stopPropagation();
+            await openStatusHistory(btn.dataset.statusHistory, btn.dataset.issueSummary || '', btn.dataset.issueStatus || '');
+          };
+        });
         panels.appendChild(panel);
       }
     }
@@ -439,7 +533,7 @@
             ${res.dryRun ? `<div class="result-box" style="margin-top:14px;"><div class="small" style="margin-bottom:8px;">Anteprima request Jira</div>${preview}</div>` : ''}
             <div class="result-box" style="margin-top:14px; margin-bottom:0;">
               ${rows.length ? `<table>
-                <thead><tr><th>Key</th><th>Summary</th><th>Status</th><th>Assignee</th><th>Updated</th></tr></thead>
+                <thead><tr><th>Key</th><th>Summary</th><th>Status</th><th>Assignee</th><th>Updated</th><th></th></tr></thead>
                 <tbody>
                   ${rows.map(i => `<tr>
                     <td>${renderIssueLink(i.key)}</td>
@@ -447,9 +541,103 @@
                     <td>${escapeHtml(i.status)}</td>
                     <td>${escapeHtml(i.assignee || '—')}</td>
                     <td>${escapeHtml(i.updated)}</td>
+                    <td><div class="table-actions"><button class="link-btn" data-status-history="${escapeHtml(i.key)}" data-issue-summary="${escapeHtml(i.summary)}" data-issue-status="${escapeHtml(i.status)}">Status history</button></div></td>
                   </tr>`).join('')}
                 </tbody>
               </table>` : '<div class="muted-box">Nessuna issue trovata.</div>'}
+            </div>
+          </div>` : ''}`;
+    }
+
+    function formatDateTime(value) {
+      if (!value) return 'Data non disponibile';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return escapeHtml(value);
+      return new Intl.DateTimeFormat('it-IT', {
+        dateStyle: 'medium',
+        timeStyle: 'short'
+      }).format(date);
+    }
+
+    function renderHistoryModal() {
+      historyModal.classList.toggle('open', state.statusHistoryModal.open);
+      el('historyModalTitle').textContent = state.statusHistoryModal.issueKey
+        ? `Status history · ${state.statusHistoryModal.issueKey}`
+        : 'Status history';
+      el('historyModalSubtitle').textContent = [state.statusHistoryModal.summary, state.statusHistoryModal.currentStatus ? `Stato attuale: ${state.statusHistoryModal.currentStatus}` : '']
+        .filter(Boolean)
+        .join(' · ');
+      const body = el('historyModalBody');
+      if (!state.statusHistoryModal.open) {
+        body.innerHTML = '';
+        return;
+      }
+      if (state.statusHistoryModal.loading) {
+        body.innerHTML = '<div class="muted-box">Carico la history dello status…</div>';
+        return;
+      }
+      if (!state.statusHistoryModal.events.length) {
+        body.innerHTML = '<div class="muted-box">Nessun cambio di status trovato per questo ticket.</div>';
+        return;
+      }
+      body.innerHTML = state.statusHistoryModal.events.map(event => `
+        <div class="timeline-item">
+          <div class="timeline-meta">
+            <span>${escapeHtml(formatDateTime(event.at))}</span>
+            <span>${escapeHtml(event.author || 'Sconosciuto')}</span>
+          </div>
+          <div class="timeline-status">${escapeHtml(event.from || '—')} → ${escapeHtml(event.to || '—')}</div>
+        </div>
+      `).join('');
+    }
+
+    function closeStatusHistory() {
+      state.statusHistoryModal = {
+        open: false,
+        loading: false,
+        issueKey: '',
+        summary: '',
+        currentStatus: '',
+        events: []
+      };
+      renderHistoryModal();
+    }
+
+    async function openStatusHistory(issueKey, summary = '', currentStatus = '') {
+      state.statusHistoryModal = {
+        open: true,
+        loading: true,
+        issueKey,
+        summary,
+        currentStatus,
+        events: []
+      };
+      renderHistoryModal();
+      try {
+        const cached = state.statusHistoryCache.get(issueKey);
+        const data = cached || await apiJson(`/api/issues/${encodeURIComponent(issueKey)}/status-history`);
+        if (!cached) state.statusHistoryCache.set(issueKey, data);
+        state.statusHistoryModal = {
+          open: true,
+          loading: false,
+          issueKey: data.issue?.key || issueKey,
+          summary: data.issue?.summary || summary,
+          currentStatus: data.issue?.currentStatus || currentStatus,
+          events: Array.isArray(data.events) ? data.events : []
+        };
+      } catch (e) {
+        state.statusHistoryModal = {
+          open: true,
+          loading: false,
+          issueKey,
+          summary,
+          currentStatus,
+          events: []
+        };
+        el('historyModalBody').innerHTML = `<div class="muted-box">Errore nel recupero della status history: ${escapeHtml(String(e.message || e))}</div>`;
+      }
+      renderHistoryModal();
+    }
             </div>
           </div>` : ''}`;
     }
@@ -625,8 +813,16 @@
       renderChooser();
     };
     el('resetAllBtn').onclick = resetAll;
+    el('closeHistoryModalBtn').onclick = closeStatusHistory;
+    historyModal.addEventListener('click', (event) => {
+      if (event.target === historyModal) closeStatusHistory();
+    });
+    window.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && state.statusHistoryModal.open) closeStatusHistory();
+    });
 
     init();
+    renderHistoryModal();
   </script>
 </body>
 </html>
