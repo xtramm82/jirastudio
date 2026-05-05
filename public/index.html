@@ -424,11 +424,11 @@
       const preview = res.request ? `<pre style="white-space:pre-wrap;margin:0">${escapeHtml(JSON.stringify(res.request, null, 2))}</pre>` : '';
       return `
         <button data-toggle-result style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border:0;background:rgba(255,255,255,0.92);cursor:pointer;font:inherit;text-align:left;">
-          <span style="font-weight:700;">${escapeHtml(res.title)}</span>
-          <span style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+          <span style="display:flex;align-items:center;gap:10px;min-width:0;">
             <span class="pill">${res.count}</span>
-            <span class="small">${expanded ? '▾' : '▸'}</span>
+            <span style="font-weight:700;">${escapeHtml(res.title)}</span>
           </span>
+          <span class="small" style="flex-shrink:0;">${expanded ? '▾' : '▸'}</span>
         </button>
         ${expanded ? `
           <div style="padding: 0 18px 18px; border-top: 1px solid rgba(15,23,42,0.08); background: rgba(248,250,252,0.72);">
