@@ -105,15 +105,55 @@ app.delete('/api/reports/:id', (req, res) => {
   res.json({ ok: true });
 });
 
-function buildJiraSearchRequest(cfg, report) {
+function jiraSearchFields() {
+  return ['summary', 'status', 'assignee', 'updated', 'priority', 'issuetype'];
+}
+
+function buildJiraSearchRequest(cfg, report, nextPageToken = null) {
   const base = normalizeBaseUrl(cfg.jiraBaseUrl);
-  const url = `${base}/rest/api/3/search/jql`;
+  const apiVersion = cfg.jiraApiVersion || '3';
+  const url = `${base}/rest/api/${apiVersion}/search/jql`;
   const body = {
     jql: report.jql,
     maxResults: Number(cfg.jiraPageSize || 50),
-    fields: ['summary', 'status', 'assignee', 'updated', 'priority', 'issuetype']
+    fields: jiraSearchFields()
   };
+  if (nextPageToken) body.nextPageToken = nextPageToken;
   return { url, body };
+}
+
+async function jiraSearchAll(cfg, report) {
+  const issues = [];
+  let total = null;
+  let nextPageToken = null;
+
+  do {
+    const request = buildJiraSearchRequest(cfg, report, nextPageToken);
+    const response = await fetch(request.url, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: authHeader(cfg)
+      },
+      body: JSON.stringify(request.body)
+    });
+
+    const text = await response.text();
+    let search = null;
+    try { search = text ? JSON.parse(text) : null; } catch { search = text; }
+
+    if (!response.ok) {
+      const msg = search && typeof search === 'object' ? (search.errorMessages?.join(', ') || search.message || text) : text;
+      throw Object.assign(new Error(`Jira ${response.status}: ${msg}`), { status: response.status, body: search });
+    }
+
+    total = typeof search?.total === 'number' ? search.total : total;
+    issues.push(...(search?.issues || []));
+    nextPageToken = search?.nextPageToken || null;
+  } while (nextPageToken);
+
+  return { total: total ?? issues.length, issues };
 }
 
 app.post('/api/reports/test', (req, res) => {
@@ -147,23 +187,7 @@ app.post('/api/reports/run', async (req, res) => {
   try {
     const results = [];
     for (const report of reports) {
-      const request = buildJiraSearchRequest(cfg, report);
-      const res = await fetch(request.url, {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-          Authorization: authHeader(cfg)
-        },
-        body: JSON.stringify(request.body)
-      });
-      const text = await res.text();
-      let search = null;
-      try { search = text ? JSON.parse(text) : null; } catch { search = text; }
-      if (!res.ok) {
-        const msg = search && typeof search === 'object' ? (search.errorMessages?.join(', ') || search.message || text) : text;
-        throw Object.assign(new Error(`Jira ${res.status}: ${msg}`), { status: res.status, body: search });
-      }
+      const search = await jiraSearchAll(cfg, report);
       results.push({
         id: report.id,
         title: report.title,
