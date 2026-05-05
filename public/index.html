@@ -296,6 +296,8 @@
         div.querySelector('[data-del]').onclick = () => { state.reports = state.reports.filter(x => x.id !== r.id); state.selected.delete(r.id); save('jira-studio-reports', state.reports); renderReports(); renderChooser(); };
         list.appendChild(div);
       }
+      const btn = el('runSelectedBtn');
+      if (btn) btn.disabled = state.selected.size === 0;
     }
 
     function renderChooser() {
@@ -305,7 +307,7 @@
         const div = document.createElement('div');
         div.className = 'item';
         div.innerHTML = `
-          <label style="display:flex;align-items:center;gap:12px;color:var(--text);">
+          <label style="display:flex;align-items:center;gap:12px;color:var(--text);cursor:pointer;flex:1;">
             <input type="checkbox" ${state.selected.has(r.id) ? 'checked' : ''} />
             <span>
               <div><strong>${escapeHtml(r.title)}</strong></div>
@@ -316,17 +318,19 @@
         `;
         const checkbox = div.querySelector('input');
         checkbox.checked = state.selected.has(r.id);
-        checkbox.onchange = () => {
-          if (checkbox.checked) state.selected.add(r.id);
+        const sync = (checked) => {
+          if (checked) state.selected.add(r.id);
           else state.selected.delete(r.id);
           renderReports();
         };
-        div.querySelector('label').onclick = (e) => {
-          if (e.target.tagName !== 'INPUT') {
-            checkbox.checked = !checkbox.checked;
-            checkbox.dispatchEvent(new Event('change'));
-          }
-        };
+        checkbox.addEventListener('change', () => sync(checkbox.checked));
+        const label = div.querySelector('label');
+        label.addEventListener('click', (e) => {
+          if (e.target === checkbox) return;
+          e.preventDefault();
+          checkbox.checked = !checkbox.checked;
+          sync(checkbox.checked);
+        });
         list.appendChild(div);
       }
     }
