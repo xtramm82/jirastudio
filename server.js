@@ -120,7 +120,25 @@ app.post('/api/reports/run', async (req, res) => {
   try {
     const results = [];
     for (const report of reports) {
-      const search = await jiraFetch(cfg, `/search?jql=${encodeURIComponent(report.jql)}&maxResults=${Number(cfg.jiraPageSize || 50)}&fields=summary,status,assignee,updated,priority,issuetype`);
+      const base = normalizeBaseUrl(cfg.jiraBaseUrl);
+      const apiVersion = String(cfg.jiraApiVersion || '3');
+      let search;
+      if (apiVersion === '3') {
+        const url = `${base}/rest/api/3/search/jql?jql=${encodeURIComponent(report.jql)}&maxResults=${Number(cfg.jiraPageSize || 50)}&fields=summary,status,assignee,updated,priority,issuetype`;
+        const res = await fetch(url, {
+          headers: { Accept: 'application/json', Authorization: authHeader(cfg) }
+        });
+        const text = await res.text();
+        let body = null;
+        try { body = text ? JSON.parse(text) : null; } catch { body = text; }
+        if (!res.ok) {
+          const msg = body && typeof body === 'object' ? (body.errorMessages?.join(', ') || body.message || text) : text;
+          throw Object.assign(new Error(`Jira ${res.status}: ${msg}`), { status: res.status, body });
+        }
+        search = body;
+      } else {
+        search = await jiraFetch(cfg, `/search?jql=${encodeURIComponent(report.jql)}&maxResults=${Number(cfg.jiraPageSize || 50)}&fields=summary,status,assignee,updated,priority,issuetype`);
+      }
       results.push({
         id: report.id,
         title: report.title,
