@@ -244,7 +244,25 @@
     }
     function save(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
 
-    function init() {
+    async function apiJson(path, options = {}) {
+      const r = await fetch(path, {
+        headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+        ...options
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+      return data;
+    }
+
+    async function init() {
+      try {
+        const [cfg, reports] = await Promise.all([
+          apiJson('/api/config'),
+          apiJson('/api/reports')
+        ]);
+        state.config = { ...state.config, ...cfg };
+        state.reports = Array.isArray(reports) ? reports : [];
+      } catch {}
       el('jiraBaseUrl').value = state.config.jiraBaseUrl;
       el('jiraUser').value = state.config.jiraUser;
       el('jiraToken').value = state.config.jiraToken;
@@ -293,7 +311,13 @@
           </div>
         `;
         div.querySelector('[data-edit]').onclick = () => fillReportForm(r);
-        div.querySelector('[data-del]').onclick = () => { state.reports = state.reports.filter(x => x.id !== r.id); state.selected.delete(r.id); save('jira-studio-reports', state.reports); renderReports(); renderChooser(); };
+        div.querySelector('[data-del]').onclick = async () => {
+          await apiJson(`/api/reports/${r.id}`, { method: 'DELETE' });
+          state.reports = state.reports.filter(x => x.id !== r.id);
+          state.selected.delete(r.id);
+          save('jira-studio-reports', state.reports);
+          renderReports(); renderChooser();
+        };
         list.appendChild(div);
       }
       const btn = el('runSelectedBtn');
@@ -381,11 +405,12 @@
         </div>`;
     }
 
-    function fillReportForm(r) {
+    async function fillReportForm(r) {
       el('reportTitle').value = r.title;
       el('reportGroup').value = r.group || '';
       el('reportJql').value = r.jql;
       state.page = 'reports'; renderNav();
+      await apiJson(`/api/reports/${r.id}`, { method: 'DELETE' });
       state.reports = state.reports.filter(x => x.id !== r.id);
       save('jira-studio-reports', state.reports);
       renderReports(); renderChooser();
@@ -463,20 +488,20 @@
     async function saveConfig() {
       state.config = readConfig();
       save('jira-studio-config', state.config);
-      await fetch('/api/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(state.config)
-      });
+      await apiJson('/api/config', { method: 'POST', body: JSON.stringify(state.config) });
       setStatus('Configurazione salvata', true);
     }
 
-    function addReport() {
+    async function addReport() {
       const title = el('reportTitle').value.trim();
       const group = el('reportGroup').value.trim();
       const jql = el('reportJql').value.trim();
       if (!title || !jql) return alert('Titolo e JQL sono obbligatori.');
-      state.reports.push({ id: crypto.randomUUID(), title, group, jql });
+      const report = await apiJson('/api/reports', {
+        method: 'POST',
+        body: JSON.stringify({ title, group, jql })
+      });
+      state.reports.push(report);
       save('jira-studio-reports', state.reports);
       el('reportTitle').value = ''; el('reportGroup').value = ''; el('reportJql').value = '';
       renderReports(); renderChooser();
@@ -496,7 +521,11 @@
         const text = await file.text();
         const data = JSON.parse(text);
         if (!Array.isArray(data)) return alert('Formato JSON non valido.');
-        state.reports = data.map(r => ({ id: r.id || crypto.randomUUID(), title: r.title, group: r.group || '', jql: r.jql }));
+        state.reports = [];
+        for (const r of data) {
+          const report = await apiJson('/api/reports', { method: 'POST', body: JSON.stringify({ title: r.title, group: r.group || '', jql: r.jql, id: r.id }) });
+          state.reports.push(report);
+        }
         save('jira-studio-reports', state.reports);
         renderReports(); renderChooser();
       };
