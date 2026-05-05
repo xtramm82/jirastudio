@@ -107,9 +107,16 @@ app.delete('/api/reports/:id', (req, res) => {
 
 app.post('/api/reports/run', async (req, res) => {
   const cfg = req.body?.config || getConfig();
-  const reportIds = req.body?.reportIds || [];
-  const reports = getReports().filter(r => reportIds.includes(r.id));
-  if (!reports.length) return res.status(400).json({ ok: false, error: 'No reports selected' });
+  const reportIds = Array.isArray(req.body?.reportIds) ? req.body.reportIds : [];
+  const allReports = getReports();
+  const reports = allReports.filter(r => reportIds.includes(r.id));
+  if (!reports.length) {
+    return res.status(400).json({
+      ok: false,
+      error: 'No reports selected',
+      debug: { reportIds, availableReportIds: allReports.map(r => r.id) }
+    });
+  }
   try {
     const results = [];
     for (const report of reports) {
