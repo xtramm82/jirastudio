@@ -293,7 +293,7 @@
           </div>
         `;
         div.querySelector('[data-edit]').onclick = () => fillReportForm(r);
-        div.querySelector('[data-del]').onclick = () => { state.reports = state.reports.filter(x => x.id !== r.id); save('jira-studio-reports', state.reports); renderReports(); renderChooser(); };
+        div.querySelector('[data-del]').onclick = () => { state.reports = state.reports.filter(x => x.id !== r.id); state.selected.delete(r.id); save('jira-studio-reports', state.reports); renderReports(); renderChooser(); };
         list.appendChild(div);
       }
     }
@@ -315,7 +315,18 @@
           <div class="meta" style="max-width:50%;">${escapeHtml(r.jql)}</div>
         `;
         const checkbox = div.querySelector('input');
-        checkbox.onchange = () => checkbox.checked ? state.selected.add(r.id) : state.selected.delete(r.id);
+        checkbox.checked = state.selected.has(r.id);
+        checkbox.onchange = () => {
+          if (checkbox.checked) state.selected.add(r.id);
+          else state.selected.delete(r.id);
+          renderReports();
+        };
+        div.querySelector('label').onclick = (e) => {
+          if (e.target.tagName !== 'INPUT') {
+            checkbox.checked = !checkbox.checked;
+            checkbox.dispatchEvent(new Event('change'));
+          }
+        };
         list.appendChild(div);
       }
     }
