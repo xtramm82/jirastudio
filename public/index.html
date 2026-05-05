@@ -166,8 +166,8 @@
         <label>
           API version
           <select id="jiraApiVersion">
-            <option value="2">v2</option>
             <option value="3">v3</option>
+            <option value="2">v2</option>
           </select>
         </label>
         <label>
@@ -180,7 +180,7 @@
         <button class="ghost" id="testConfigBtn">Test connessione</button>
         <button class="danger" id="resetAllBtn">Reset totale</button>
       </div>
-      <div class="small" id="configInfo">Salvo tutto in localStorage del browser. Per la pubblicazione reale conviene mettere un backend che protegga il token.</div>
+      <div class="small" id="configInfo">L’app usa un backend locale per evitare CORS e non esporre il token nel browser.</div>
     </section>
 
     <section class="card page" data-page="reports">
@@ -380,7 +380,13 @@
       const c = readConfig();
       if (!c.jiraBaseUrl || !c.jiraUser || !c.jiraToken) return setStatus('Compila URL, user e token.', false);
       try {
-        await jiraRequest(c, '/myself');
+        const r = await fetch('/api/config/test', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(c)
+        });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.error || 'Errore test configurazione');
         setStatus('Connessione OK', true);
       } catch (e) {
         setStatus('Connessione fallita', false);
@@ -418,33 +424,33 @@
       const selected = state.reports.filter(r => state.selected.has(r.id));
       if (!selected.length) return alert('Seleziona almeno un report.');
       setStatus('Esecuzione in corso...', true);
-      state.results = [];
-      for (const report of selected) {
-        const jql = report.jql;
-        const res = await jiraRequest(c, `/rest/api/${c.jiraApiVersion}/search?jql=${encodeURIComponent(jql)}&maxResults=${c.jiraPageSize}&fields=summary,status,assignee,updated`);
-        state.results.push({
-          id: report.id,
-          title: report.title,
-          jql,
-          count: res.total || 0,
-          issues: (res.issues || []).map(x => ({
-            key: x.key,
-            summary: x.fields?.summary || '',
-            status: x.fields?.status?.name || '',
-            assignee: x.fields?.assignee?.displayName || x.fields?.assignee?.emailAddress || '',
-            updated: x.fields?.updated || ''
-          }))
+      try {
+        const r = await fetch('/api/reports/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ config: c, reportIds: selected.map(r => r.id) })
         });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.error || 'Errore esecuzione report');
+        state.results = data.results || [];
+        state.activeTab = state.results[0]?.id || null;
+        renderResults();
+        setStatus('Report completati', true);
+        state.page = 'run'; renderNav();
+      } catch (e) {
+        setStatus('Esecuzione fallita', false);
+        alert(String(e.message || e));
       }
-      state.activeTab = state.results[0]?.id || null;
-      renderResults();
-      setStatus('Report completati', true);
-      state.page = 'run'; renderNav();
     }
 
-    function saveConfig() {
+    async function saveConfig() {
       state.config = readConfig();
       save('jira-studio-config', state.config);
+      await fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(state.config)
+      });
       setStatus('Configurazione salvata', true);
     }
 
