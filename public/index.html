@@ -384,6 +384,7 @@
           if (checked) state.selected.add(r.id);
           else state.selected.delete(r.id);
           renderReports();
+          renderChooser();
         };
         checkbox.addEventListener('change', () => sync(checkbox.checked));
         const label = div.querySelector('label');
@@ -596,8 +597,16 @@
     el('exportReportsBtn').onclick = exportReports;
     el('importReportsBtn').onclick = importReports;
     el('runSelectedBtn').onclick = () => runSelected(false);
-    el('selectAllBtn').onclick = () => { state.selected = new Set(state.reports.map(r => r.id)); renderChooser(); };
-    el('clearSelectionBtn').onclick = () => { state.selected.clear(); renderChooser(); };
+    el('selectAllBtn').onclick = () => {
+      state.selected = new Set(state.reports.map(r => r.id));
+      renderReports();
+      renderChooser();
+    };
+    el('clearSelectionBtn').onclick = () => {
+      state.selected.clear();
+      renderReports();
+      renderChooser();
+    };
     el('resetAllBtn').onclick = resetAll;
 
     init();
