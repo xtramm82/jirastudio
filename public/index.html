@@ -218,8 +218,7 @@
       </div>
       <div class="small">Questa schermata usa il backend locale, che a sua volta chiama la Jira Search API aggiornata con paginazione token-based.</div>
       <div style="margin-top:14px" class="list" id="runChooser"></div>
-      <div style="margin-top:18px" class="tabs" id="resultTabs"></div>
-      <div id="resultPanels"></div>
+      <div style="margin-top:18px" id="resultPanels"></div>
     </section>
   </div>
 
@@ -232,7 +231,7 @@
       reports: load('jira-studio-reports', []),
       selected: new Set(),
       results: [],
-      activeTab: null
+      expandedResults: new Set()
     };
 
     const el = (id) => document.getElementById(id);
@@ -361,51 +360,57 @@
     }
 
     function renderResults() {
-      const tabs = el('resultTabs');
       const panels = el('resultPanels');
-      tabs.innerHTML = '';
       panels.innerHTML = '';
       if (!state.results.length) {
         panels.innerHTML = '<div class="muted-box">Nessun risultato ancora. Esegui un report.</div>';
         return;
       }
       for (const res of state.results) {
-        const tab = document.createElement('button');
-        tab.className = 'tab-btn' + (state.activeTab === res.id ? ' active' : '');
-        tab.textContent = `${res.title} (${res.count})`;
-        tab.onclick = () => { state.activeTab = res.id; renderResults(); };
-        tabs.appendChild(tab);
-
         const panel = document.createElement('div');
-        panel.className = 'tab-panel' + (state.activeTab === res.id ? ' active' : '');
-        panel.innerHTML = renderResultPanel(res);
+        panel.className = 'result-box';
+        panel.style.padding = '0';
+        panel.style.overflow = 'hidden';
+        panel.innerHTML = renderResultPanel(res, state.expandedResults.has(res.id));
+        const toggle = panel.querySelector('[data-toggle-result]');
+        toggle.onclick = () => {
+          if (state.expandedResults.has(res.id)) state.expandedResults.delete(res.id);
+          else state.expandedResults.add(res.id);
+          renderResults();
+        };
         panels.appendChild(panel);
       }
     }
 
-    function renderResultPanel(res) {
+    function renderResultPanel(res, expanded) {
       const rows = res.issues || [];
       const preview = res.request ? `<pre style="white-space:pre-wrap;margin:0">${escapeHtml(JSON.stringify(res.request, null, 2))}</pre>` : '';
       return `
-        <div class="result-box">
-          <div class="small">${escapeHtml(res.jql)}</div>
-          <div style="margin-top:8px;" class="small">Totale: <strong>${res.count}</strong></div>
-        </div>
-        ${res.dryRun ? `<div class="result-box"><div class="small" style="margin-bottom:8px;">Anteprima request Jira</div>${preview}</div>` : ''}
-        <div class="result-box">
-          ${rows.length ? `<table>
-            <thead><tr><th>Key</th><th>Summary</th><th>Status</th><th>Assignee</th><th>Updated</th></tr></thead>
-            <tbody>
-              ${rows.map(i => `<tr>
-                <td>${escapeHtml(i.key)}</td>
-                <td>${escapeHtml(i.summary)}</td>
-                <td>${escapeHtml(i.status)}</td>
-                <td>${escapeHtml(i.assignee || '—')}</td>
-                <td>${escapeHtml(i.updated)}</td>
-              </tr>`).join('')}
-            </tbody>
-          </table>` : '<div class="muted-box">Nessuna issue trovata.</div>'}
-        </div>`;
+        <button data-toggle-result style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border:0;background:rgba(255,255,255,0.92);cursor:pointer;font:inherit;text-align:left;">
+          <span style="font-weight:700;">${escapeHtml(res.title)}</span>
+          <span style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+            <span class="pill">${res.count}</span>
+            <span class="small">${expanded ? '▾' : '▸'}</span>
+          </span>
+        </button>
+        ${expanded ? `
+          <div style="padding: 0 18px 18px; border-top: 1px solid rgba(15,23,42,0.08); background: rgba(248,250,252,0.72);">
+            ${res.dryRun ? `<div class="result-box" style="margin-top:14px;"><div class="small" style="margin-bottom:8px;">Anteprima request Jira</div>${preview}</div>` : ''}
+            <div class="result-box" style="margin-top:14px; margin-bottom:0;">
+              ${rows.length ? `<table>
+                <thead><tr><th>Key</th><th>Summary</th><th>Status</th><th>Assignee</th><th>Updated</th></tr></thead>
+                <tbody>
+                  ${rows.map(i => `<tr>
+                    <td>${escapeHtml(i.key)}</td>
+                    <td>${escapeHtml(i.summary)}</td>
+                    <td>${escapeHtml(i.status)}</td>
+                    <td>${escapeHtml(i.assignee || '—')}</td>
+                    <td>${escapeHtml(i.updated)}</td>
+                  </tr>`).join('')}
+                </tbody>
+              </table>` : '<div class="muted-box">Nessuna issue trovata.</div>'}
+            </div>
+          </div>` : ''}`;
     }
 
     async function fillReportForm(r) {
@@ -479,7 +484,7 @@
         state.results = dryRun
           ? (data.preview || []).map(p => ({ id: p.id, title: p.title, jql: p.jql, count: 0, issues: [], request: p.request, dryRun: true }))
           : (data.results || []);
-        state.activeTab = state.results[0]?.id || null;
+        state.expandedResults = new Set(state.results.map(r => r.id));
         renderResults();
         setStatus(dryRun ? 'Anteprima pronta' : 'Report completati', true);
         state.page = 'run'; renderNav();
@@ -542,7 +547,7 @@
       localStorage.removeItem('jira-studio-config');
       localStorage.removeItem('jira-studio-reports');
       state.config = { jiraBaseUrl:'', jiraUser:'', jiraToken:'', jiraProjectKey:'', jiraApiVersion:'3', jiraPageSize:50 };
-      state.reports = []; state.selected.clear(); state.results = []; state.activeTab = null;
+      state.reports = []; state.selected.clear(); state.results = []; state.expandedResults = new Set();
       init();
       setStatus('Reset completato', true);
     }
