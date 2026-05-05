@@ -222,6 +222,23 @@
       color: var(--muted);
       font-size: 0.86rem;
     }
+    .timeline-date {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .mini-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(37,99,235,0.1);
+      color: var(--accent);
+      font-size: 0.78rem;
+      font-weight: 700;
+      line-height: 1;
+    }
     .timeline-status {
       font-weight: 700;
     }
@@ -595,10 +612,13 @@
         return `
         <div class="timeline-item">
           <div class="timeline-meta">
-            <span>${escapeHtml(formatDateTime(event.at))}</span>
+            <span class="timeline-date">
+              <span>${escapeHtml(formatDateTime(event.at))}</span>
+              ${elapsed ? `<span class="mini-badge">${escapeHtml(elapsed)}</span>` : ''}
+            </span>
             <span>${escapeHtml(event.author || 'Sconosciuto')}</span>
           </div>
-          <div class="timeline-status">${escapeHtml(event.from || '—')} → ${escapeHtml(event.to || '—')}${elapsed ? ` · dopo ${escapeHtml(elapsed)}` : ''}</div>
+          <div class="timeline-status">${escapeHtml(event.from || '—')} → ${escapeHtml(event.to || '—')}</div>
         </div>
       `;
       }).join('');
