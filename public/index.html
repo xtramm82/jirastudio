@@ -174,7 +174,7 @@
       <div class="status" id="connStatus">Pronto</div>
     </header>
 
-    <section class="card page active" data-page="config">
+    <section class="card page" data-page="config">
       <h2 class="section-title">Configurazione generale</h2>
       <div class="grid-form">
         <label>
@@ -238,7 +238,7 @@
       <div style="margin-top:14px" class="list" id="reportsList"></div>
     </section>
 
-    <section class="card page" data-page="run">
+    <section class="card page active" data-page="run">
       <h2 class="section-title">Esegui report</h2>
       <div class="actions">
         <button class="primary" id="runSelectedBtn">Esegui selezionati</button>
@@ -249,7 +249,7 @@
       <div style="margin-top:14px" class="list" id="runChooser"></div>
     </section>
 
-    <section class="page" data-page="run-results">
+    <section class="page active" data-page="run-results">
       <div class="results-section">
         <div class="results-header">
           <h3 class="results-title">Risultati</h3>
@@ -262,7 +262,7 @@
 
   <script type="module">
     const state = {
-      page: 'config',
+      page: 'run',
       config: load('jira-studio-config', {
         jiraBaseUrl: '', jiraUser: '', jiraToken: '', jiraProjectKey: '', jiraApiVersion: '3', jiraPageSize: 50
       }),
