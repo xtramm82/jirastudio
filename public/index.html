@@ -331,10 +331,14 @@
       connStatus.style.borderColor = good ? 'rgba(22,163,74,0.16)' : 'rgba(202,138,4,0.18)';
     }
 
+    function sortedReports(items = state.reports) {
+      return [...items].sort((a, b) => String(a?.title || '').localeCompare(String(b?.title || ''), 'it', { sensitivity: 'base' }));
+    }
+
     function renderReports() {
       const list = el('reportsList');
       list.innerHTML = state.reports.length ? '' : '<div class="muted-box">Nessun report salvato.</div>';
-      for (const r of state.reports) {
+      for (const r of sortedReports()) {
         const div = document.createElement('div');
         div.className = 'item';
         div.innerHTML = `
@@ -365,7 +369,7 @@
     function renderChooser() {
       const list = el('runChooser');
       list.innerHTML = state.reports.length ? '' : '<div class="muted-box">Salva prima almeno un report.</div>';
-      for (const r of state.reports) {
+      for (const r of sortedReports()) {
         const div = document.createElement('div');
         div.className = 'item';
         div.innerHTML = `
@@ -405,7 +409,7 @@
         panels.innerHTML = '<div class="muted-box">Nessun risultato ancora. Esegui un report.</div>';
         return;
       }
-      for (const res of state.results) {
+      for (const res of sortedReports(state.results)) {
         const panel = document.createElement('div');
         panel.className = 'result-item';
         panel.innerHTML = renderResultPanel(res, state.expandedResults.has(res.id));
