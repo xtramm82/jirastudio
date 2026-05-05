@@ -442,7 +442,7 @@
                 <thead><tr><th>Key</th><th>Summary</th><th>Status</th><th>Assignee</th><th>Updated</th></tr></thead>
                 <tbody>
                   ${rows.map(i => `<tr>
-                    <td>${escapeHtml(i.key)}</td>
+                    <td>${renderIssueLink(i.key)}</td>
                     <td>${escapeHtml(i.summary)}</td>
                     <td>${escapeHtml(i.status)}</td>
                     <td>${escapeHtml(i.assignee || '—')}</td>
@@ -591,6 +591,19 @@
       state.reports = []; state.selected.clear(); state.results = []; state.expandedResults = new Set();
       init();
       setStatus('Reset completato', true);
+    }
+
+    function issueBrowseUrl(key) {
+      const base = String(state.config?.jiraBaseUrl || '').trim().replace(/\/$/, '');
+      if (!base || !key) return '';
+      return `${base}/browse/${encodeURIComponent(key)}`;
+    }
+
+    function renderIssueLink(key) {
+      const url = issueBrowseUrl(key);
+      const label = escapeHtml(key || '');
+      if (!url) return label;
+      return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" style="color: var(--accent); font-weight: 700; text-decoration: none;">${label}</a>`;
     }
 
     function escapeHtml(str) { return String(str).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','\'' :'&#39;','"':'&quot;'}[c])); }
