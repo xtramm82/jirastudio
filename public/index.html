@@ -559,6 +559,15 @@
       }).format(date);
     }
 
+    function formatElapsedDays(fromValue, toValue) {
+      const from = new Date(fromValue);
+      const to = new Date(toValue);
+      if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) return '';
+      const diffMs = to.getTime() - from.getTime();
+      const days = Math.max(0, Math.round(diffMs / 86400000));
+      return days === 1 ? '1 giorno' : `${days} giorni`;
+    }
+
     function renderHistoryModal() {
       historyModal.classList.toggle('open', state.statusHistoryModal.open);
       el('historyModalTitle').textContent = state.statusHistoryModal.issueKey
@@ -580,15 +589,19 @@
         body.innerHTML = '<div class="muted-box">Nessun cambio di status trovato per questo ticket.</div>';
         return;
       }
-      body.innerHTML = state.statusHistoryModal.events.map(event => `
+      body.innerHTML = state.statusHistoryModal.events.map((event, index, events) => {
+        const previousAt = events[index - 1]?.at || null;
+        const elapsed = previousAt ? formatElapsedDays(previousAt, event.at) : '';
+        return `
         <div class="timeline-item">
           <div class="timeline-meta">
             <span>${escapeHtml(formatDateTime(event.at))}</span>
             <span>${escapeHtml(event.author || 'Sconosciuto')}</span>
           </div>
-          <div class="timeline-status">${escapeHtml(event.from || '—')} → ${escapeHtml(event.to || '—')}</div>
+          <div class="timeline-status">${escapeHtml(event.from || '—')} → ${escapeHtml(event.to || '—')}${elapsed ? ` · dopo ${escapeHtml(elapsed)}` : ''}</div>
         </div>
-      `).join('');
+      `;
+      }).join('');
     }
 
     function closeStatusHistory() {
