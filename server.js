@@ -116,10 +116,25 @@ function buildJiraSearchRequest(cfg, report) {
   return { url, body };
 }
 
+app.post('/api/reports/test', (req, res) => {
+  const cfg = req.body?.config || getConfig();
+  const reportIds = Array.isArray(req.body?.reportIds) ? req.body.reportIds : [];
+  const allReports = getReports();
+  const reports = allReports.filter(r => reportIds.includes(r.id));
+  if (!reports.length) {
+    return res.status(400).json({
+      ok: false,
+      error: 'No reports selected',
+      debug: { reportIds, availableReportIds: allReports.map(r => r.id) }
+    });
+  }
+  const preview = reports.map(report => ({ id: report.id, title: report.title, jql: report.jql, request: buildJiraSearchRequest(cfg, report) }));
+  res.json({ ok: true, preview });
+});
+
 app.post('/api/reports/run', async (req, res) => {
   const cfg = req.body?.config || getConfig();
   const reportIds = Array.isArray(req.body?.reportIds) ? req.body.reportIds : [];
-  const dryRun = !!req.body?.dryRun;
   const allReports = getReports();
   const reports = allReports.filter(r => reportIds.includes(r.id));
   if (!reports.length) {
@@ -133,16 +148,6 @@ app.post('/api/reports/run', async (req, res) => {
     const results = [];
     for (const report of reports) {
       const request = buildJiraSearchRequest(cfg, report);
-      if (dryRun) {
-        results.push({
-          id: report.id,
-          title: report.title,
-          jql: report.jql,
-          request,
-          dryRun: true
-        });
-        continue;
-      }
       const res = await fetch(request.url, {
         method: 'POST',
         headers: {

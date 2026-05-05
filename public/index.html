@@ -385,11 +385,13 @@
 
     function renderResultPanel(res) {
       const rows = res.issues || [];
+      const preview = res.request ? `<pre style="white-space:pre-wrap;margin:0">${escapeHtml(JSON.stringify(res.request, null, 2))}</pre>` : '';
       return `
         <div class="result-box">
           <div class="small">${escapeHtml(res.jql)}</div>
           <div style="margin-top:8px;" class="small">Totale: <strong>${res.count}</strong></div>
         </div>
+        ${res.dryRun ? `<div class="result-box"><div class="small" style="margin-bottom:8px;">Anteprima request Jira</div>${preview}</div>` : ''}
         <div class="result-box">
           ${rows.length ? `<table>
             <thead><tr><th>Key</th><th>Summary</th><th>Status</th><th>Assignee</th><th>Updated</th></tr></thead>
@@ -467,14 +469,16 @@
       setStatus(dryRun ? 'Creo anteprima chiamata...' : 'Esecuzione in corso...', true);
       try {
         const reportIds = selected.map(r => r.id);
-        const r = await fetch('/api/reports/run', {
+        const r = await fetch(dryRun ? '/api/reports/test' : '/api/reports/run', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ config: c, reportIds, dryRun })
+          body: JSON.stringify({ config: c, reportIds })
         });
         const data = await r.json();
         if (!r.ok) throw new Error((data.error || 'Errore esecuzione report') + (data.debug ? `\nDEBUG: ${JSON.stringify(data.debug)}` : ''));
-        state.results = data.results || [];
+        state.results = dryRun
+          ? (data.preview || []).map(p => ({ id: p.id, title: p.title, jql: p.jql, count: 0, issues: [], request: p.request, dryRun: true }))
+          : (data.results || []);
         state.activeTab = state.results[0]?.id || null;
         renderResults();
         setStatus(dryRun ? 'Anteprima pronta' : 'Report completati', true);
