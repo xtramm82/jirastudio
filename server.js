@@ -132,7 +132,7 @@ app.post('/api/reports/run', async (req, res) => {
     }
     res.json({ ok: true, results });
   } catch (err) {
-    res.status(err.status || 500).json({ ok: false, error: err.message, body: err.body });
+    res.status(err.status || 500).json({ ok: false, error: err.message, body: err.body, details: err.body || null });
   }
 });
 

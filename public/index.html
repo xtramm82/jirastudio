@@ -450,7 +450,8 @@
         state.page = 'run'; renderNav();
       } catch (e) {
         setStatus('Esecuzione fallita', false);
-        alert(String(e.message || e));
+        const detail = e?.body ? `\n\nDettagli Jira: ${JSON.stringify(e.body, null, 2)}` : '';
+        alert(String(e.message || e) + detail);
       }
     }
 
