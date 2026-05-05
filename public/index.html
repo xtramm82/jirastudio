@@ -131,11 +131,9 @@
     }
     .muted-box { padding: 12px 14px; border: 1px dashed rgba(15,23,42,0.16); border-radius: 16px; color: var(--muted); background: rgba(255,255,255,0.7); }
     .results-section {
-      margin-top: 20px;
-      padding-top: 18px;
-      border-top: 1px solid rgba(15,23,42,0.1);
       display: grid;
       gap: 12px;
+      align-items: start;
     }
     .results-header {
       display: flex;
@@ -143,6 +141,7 @@
       justify-content: space-between;
       gap: 12px;
       flex-wrap: wrap;
+      padding: 0 2px;
     }
     .results-title {
       margin: 0;
@@ -152,6 +151,14 @@
     .results-subtitle {
       font-size: 0.88rem;
       color: var(--muted);
+    }
+    .result-item {
+      border: 1px solid rgba(15,23,42,0.08);
+      background: rgba(255,255,255,0.86);
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 10px 24px rgba(15,23,42,0.06);
+      backdrop-filter: blur(10px) saturate(130%);
     }
     @media (max-width: 980px) { .grid-form { grid-template-columns: 1fr; } }
   </style>
@@ -232,7 +239,7 @@
     </section>
 
     <section class="card page" data-page="run">
-      <h2 class="section-title">Esegui report e mostra i risultati in tab</h2>
+      <h2 class="section-title">Esegui report</h2>
       <div class="actions">
         <button class="primary" id="runSelectedBtn">Esegui selezionati</button>
         <button class="ghost" id="testSelectedBtn">Test</button>
@@ -241,6 +248,9 @@
       </div>
       <div class="small">Questa schermata usa il backend locale, che a sua volta chiama la Jira Search API aggiornata con paginazione token-based.</div>
       <div style="margin-top:14px" class="list" id="runChooser"></div>
+    </section>
+
+    <section class="page" data-page="run-results">
       <div class="results-section">
         <div class="results-header">
           <h3 class="results-title">Risultati</h3>
@@ -310,7 +320,7 @@
         b.onclick = () => setPage(page);
         nav.appendChild(b);
       });
-      pages.forEach(p => p.classList.toggle('active', p.dataset.page === state.page));
+      pages.forEach(p => p.classList.toggle('active', p.dataset.page === state.page || (state.page === 'run' && p.dataset.page === 'run-results')));
     }
 
     function setPage(page) { state.page = page; renderNav(); }
@@ -397,9 +407,7 @@
       }
       for (const res of state.results) {
         const panel = document.createElement('div');
-        panel.className = 'result-box';
-        panel.style.padding = '0';
-        panel.style.overflow = 'hidden';
+        panel.className = 'result-item';
         panel.innerHTML = renderResultPanel(res, state.expandedResults.has(res.id));
         const toggle = panel.querySelector('[data-toggle-result]');
         toggle.onclick = () => {
