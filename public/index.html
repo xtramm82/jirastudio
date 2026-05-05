@@ -380,7 +380,7 @@
       const c = readConfig();
       if (!c.jiraBaseUrl || !c.jiraUser || !c.jiraToken) return setStatus('Compila URL, user e token.', false);
       try {
-        await jiraRequest(c, '/rest/api/3/myself');
+        await jiraRequest(c, '/myself');
         setStatus('Connessione OK', true);
       } catch (e) {
         setStatus('Connessione fallita', false);
@@ -399,9 +399,13 @@
       };
     }
 
+    function jiraApiBase(c) {
+      return `${c.jiraBaseUrl}/rest/api/${c.jiraApiVersion}`;
+    }
+
     async function jiraRequest(c, path) {
       const auth = btoa(`${c.jiraUser}:${c.jiraToken}`);
-      const r = await fetch(`${c.jiraBaseUrl}${path}`, {
+      const r = await fetch(`${jiraApiBase(c)}${path}`, {
         headers: { 'Authorization': `Basic ${auth}`, 'Accept': 'application/json' }
       });
       if (!r.ok) throw new Error(`Jira ${r.status}: ${await r.text()}`);
