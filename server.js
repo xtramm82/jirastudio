@@ -121,9 +121,20 @@ app.post('/api/reports/run', async (req, res) => {
     const results = [];
     for (const report of reports) {
       const base = normalizeBaseUrl(cfg.jiraBaseUrl);
-      const url = `${base}/rest/api/3/search/jql?jql=${encodeURIComponent(report.jql)}&maxResults=${Number(cfg.jiraPageSize || 50)}&fields=summary,status,assignee,updated,priority,issuetype`;
+      const url = `${base}/rest/api/3/search/jql`;
+      const payload = {
+        jql: report.jql,
+        maxResults: Number(cfg.jiraPageSize || 50),
+        fields: ['summary', 'status', 'assignee', 'updated', 'priority', 'issuetype']
+      };
       const res = await fetch(url, {
-        headers: { Accept: 'application/json', Authorization: authHeader(cfg) }
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: authHeader(cfg)
+        },
+        body: JSON.stringify(payload)
       });
       const text = await res.text();
       let search = null;
