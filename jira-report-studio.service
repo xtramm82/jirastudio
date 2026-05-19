@@ -1,0 +1,21 @@
+[Unit]
+Description=Jira Report Studio
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=xtramm
+WorkingDirectory=/home/xtramm/.openclaw/workspace
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/npm start
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/xtramm/.openclaw/workspace
+
+[Install]
+WantedBy=multi-user.target

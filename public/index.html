@@ -36,6 +36,7 @@
       display: grid;
       gap: 18px;
       align-items: start;
+      align-content: start;
     }
     .hero, .card, .modal {
       background: var(--panel);
@@ -81,11 +82,80 @@
       color: white;
       border: none;
     }
+    .success {
+      background: rgba(22, 163, 74, 0.1);
+      color: var(--good);
+      border: 1px solid rgba(22, 163, 74, 0.18);
+    }
     .ghost { background: rgba(255,255,255,0.9); }
     .danger { background: rgba(220,38,38,0.08); color: var(--bad); }
     .card { padding: 18px; }
     .section-title { margin: 0 0 14px; font-size: 1rem; letter-spacing: 0.02em; }
     .grid-form { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .config-split {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin-bottom: 14px;
+    }
+    .config-box {
+      border: 1px solid rgba(15,23,42,0.08);
+      border-radius: 18px;
+      background: rgba(255,255,255,0.78);
+      padding: 18px;
+    }
+    .config-box h3 {
+      margin: 0 0 14px;
+      font-size: 0.98rem;
+      letter-spacing: 0.02em;
+    }
+    .config-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+      align-items: center;
+    }
+    .inline-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 20px;
+      font-size: 0.88rem;
+      color: var(--muted);
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      background: rgba(255,255,255,0.55);
+      transition: color 160ms ease, background 160ms ease, border-color 160ms ease;
+    }
+    .inline-status[data-state="loading"] {
+      color: var(--accent);
+      background: rgba(37,99,235,0.08);
+      border-color: rgba(37,99,235,0.18);
+    }
+    .inline-status[data-state="ok"] {
+      color: var(--good);
+      background: rgba(22,163,74,0.08);
+      border-color: rgba(22,163,74,0.16);
+    }
+    .inline-status[data-state="error"] {
+      color: var(--bad);
+      background: rgba(220,38,38,0.08);
+      border-color: rgba(220,38,38,0.16);
+    }
+    .spinner {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 2px solid currentColor;
+      border-right-color: transparent;
+      display: inline-block;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
     label { display: grid; gap: 6px; font-size: 0.9rem; color: var(--muted); }
     input, textarea, select {
       font: inherit;
@@ -107,6 +177,45 @@
       display: flex; justify-content: space-between; gap: 12px; align-items: center;
       padding: 12px 14px; border: 1px solid rgba(15,23,42,0.08);
       border-radius: 16px; background: rgba(255,255,255,0.92);
+    }
+    .report-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .report-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      line-height: 1;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+    .report-badge.export {
+      background: rgba(37,99,235,0.10);
+      color: var(--accent);
+      border-color: rgba(37,99,235,0.20);
+    }
+    .report-badge.schedule {
+      background: rgba(22,163,74,0.10);
+      color: var(--good);
+      border-color: rgba(22,163,74,0.18);
+    }
+    .report-badge.muted {
+      background: rgba(15,23,42,0.06);
+      color: var(--muted);
+      border-color: rgba(15,23,42,0.08);
+    }
+    .item.editing {
+      border-color: rgba(37,99,235,0.45);
+      background: rgba(37,99,235,0.08);
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.12), 0 14px 30px rgba(37,99,235,0.10);
     }
     .item code { font-weight: 700; }
     .meta { color: var(--muted); font-size: 0.9rem; }
@@ -134,6 +243,35 @@
       display: grid;
       gap: 12px;
       align-items: start;
+    }
+    .collapsible-card {
+      overflow: hidden;
+    }
+    .collapse-header {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border: 0;
+      padding: 0;
+      background: transparent;
+      cursor: pointer;
+      text-align: left;
+    }
+    .collapse-header .section-title {
+      margin: 0;
+    }
+    .collapse-indicator {
+      color: var(--muted);
+      font-size: 0.92rem;
+      flex-shrink: 0;
+    }
+    .panel-body {
+      margin-top: 14px;
+    }
+    .collapsed-body {
+      display: none;
     }
     .results-header {
       display: flex;
@@ -243,6 +381,7 @@
       font-weight: 700;
     }
     @media (max-width: 980px) { .grid-form { grid-template-columns: 1fr; } }
+    @media (max-width: 980px) { .config-split { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -258,39 +397,77 @@
 
     <section class="card page" data-page="config">
       <h2 class="section-title">Configurazione generale</h2>
-      <div class="grid-form">
-        <label>
-          Jira base URL
-          <input id="jiraBaseUrl" placeholder="https://your-domain.atlassian.net" />
-        </label>
-        <label>
-          Email / username
-          <input id="jiraUser" placeholder="nome@azienda.com" />
-        </label>
-        <label>
-          API token
-          <input id="jiraToken" type="password" placeholder="token Jira" />
-        </label>
-        <label>
-          Project key opzionale
-          <input id="jiraProjectKey" placeholder="ABC" />
-        </label>
-        <label>
-          API version
-          <select id="jiraApiVersion">
-            <option value="3">v3</option>
-            <option value="2">v2</option>
-          </select>
-        </label>
-        <label>
-          Risultati per pagina
-          <input id="jiraPageSize" type="number" min="1" max="500" value="50" />
-        </label>
+      <div class="config-split">
+        <div class="config-box">
+          <h3>Jira</h3>
+          <div class="grid-form">
+            <label>
+              Jira base URL
+              <input id="jiraBaseUrl" placeholder="https://your-domain.atlassian.net" />
+            </label>
+            <label>
+              Email / username
+              <input id="jiraUser" placeholder="nome@azienda.com" />
+            </label>
+            <label>
+              API token
+              <input id="jiraToken" type="password" placeholder="token Jira" />
+            </label>
+            <label>
+              Project key opzionale
+              <input id="jiraProjectKey" placeholder="ABC" />
+            </label>
+            <label>
+              API version
+              <select id="jiraApiVersion">
+                <option value="3">v3</option>
+                <option value="2">v2</option>
+              </select>
+            </label>
+            <label>
+              Risultati per pagina
+              <input id="jiraPageSize" type="number" min="1" max="500" value="50" />
+            </label>
+          </div>
+          <div class="config-actions">
+            <button class="ghost" id="testConfigBtn">Test connessione</button>
+            <span class="inline-status" id="jiraConnTestStatus" aria-live="polite">Pronto</span>
+          </div>
+        </div>
+        <div class="config-box">
+          <h3>SQL Server</h3>
+          <div class="grid-form">
+            <label style="grid-column:1 / -1">
+              SQL Server connection string
+              <textarea id="sqlServerConnectionString" placeholder="Server=localhost;Database=mydb;User Id=sa;Password=secret;TrustServerCertificate=True;"></textarea>
+            </label>
+          </div>
+          <div class="config-actions">
+            <button class="ghost" id="testSqlConfigBtn">Test connessione SQL</button>
+            <span class="inline-status" id="sqlConnTestStatus" aria-live="polite">Pronto</span>
+          </div>
+        </div>
+        <div class="config-box">
+          <h3>Schedulazione</h3>
+          <div class="grid-form">
+            <label style="grid-column:1 / -1">
+              Ora schedulazione giornaliera
+              <input id="dailyScheduleTime" type="time" />
+            </label>
+          </div>
+          <div class="small">La schedulazione giornaliera è attiva. Questo orario determina quando il processo automatico prova a eseguire i merge dei report marcati.</div>
+          <div class="config-actions">
+            <button class="ghost" id="runScheduleNowBtn">Esegui schedulazione ora</button>
+            <span class="inline-status" id="scheduleRunStatus" aria-live="polite">Pronto</span>
+          </div>
+          <div style="margin-top:14px;">
+            <div class="small" style="margin-bottom:8px; font-weight:700; color: var(--text);">Ultime esecuzioni</div>
+            <div class="list" id="scheduleLogList"></div>
+          </div>
+        </div>
       </div>
       <div class="actions">
         <button class="primary" id="saveConfigBtn">Salva configurazione</button>
-        <button class="ghost" id="testConfigBtn">Test connessione</button>
-        <button class="danger" id="resetAllBtn">Reset totale</button>
       </div>
       <div class="small" id="configInfo">L’app usa un backend locale per evitare CORS e non esporre il token nel browser.</div>
     </section>
@@ -306,13 +483,26 @@
           Categoria / tag opzionale
           <input id="reportGroup" placeholder="Sprint / QA / Release" />
         </label>
+        <label>
+          Table di destinazione
+          <input id="reportTable" placeholder="dbo.JiraIssues" />
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;color:var(--text);padding-top:26px;">
+          <input id="reportExportEnabled" type="checkbox" style="width:18px;height:18px;margin:0;" />
+          Abilita export su SQL Server
+        </label>
         <label style="grid-column:1 / -1">
           Query JQL
           <textarea id="reportJql" placeholder='project = ABC AND statusCategory != Done ORDER BY priority DESC'></textarea>
         </label>
+        <label style="display:flex;align-items:center;gap:10px;color:var(--text);grid-column:1 / -1;">
+          <input id="reportScheduledEnabled" type="checkbox" style="width:18px;height:18px;margin:0;" />
+          Partecipa all'esecuzione schedulata
+        </label>
       </div>
       <div class="actions">
         <button class="primary" id="addReportBtn">Salva report</button>
+        <button class="ghost" id="cancelEditBtn" style="display:none;">Annulla modifica</button>
         <button class="ghost" id="exportReportsBtn">Esporta JSON</button>
         <button class="ghost" id="importReportsBtn">Importa JSON</button>
       </div>
@@ -320,15 +510,20 @@
       <div style="margin-top:14px" class="list" id="reportsList"></div>
     </section>
 
-    <section class="card page active" data-page="run">
-      <h2 class="section-title">Esegui report</h2>
-      <div class="actions">
-        <button class="primary" id="runSelectedBtn">Esegui selezionati</button>
-        <button class="ghost" id="selectAllBtn">Seleziona tutto</button>
-        <button class="ghost" id="clearSelectionBtn">Deseleziona</button>
+    <section class="card page active collapsible-card" data-page="run" id="runPanelSection">
+      <button class="collapse-header" id="toggleRunPanelBtn" type="button" aria-expanded="true">
+        <h2 class="section-title">Esegui report</h2>
+        <span class="collapse-indicator" id="runPanelIndicator">▾</span>
+      </button>
+      <div id="runPanelBody" class="panel-body">
+        <div class="actions">
+          <button class="primary" id="runSelectedBtn">Esegui selezionati</button>
+          <button class="ghost" id="selectAllBtn">Seleziona tutto</button>
+          <button class="ghost" id="clearSelectionBtn">Deseleziona</button>
+        </div>
+        <div class="small">Questa schermata usa il backend locale, che a sua volta chiama la Jira Search API aggiornata con paginazione token-based.</div>
+        <div style="margin-top:14px" class="list" id="runChooser"></div>
       </div>
-      <div class="small">Questa schermata usa il backend locale, che a sua volta chiama la Jira Search API aggiornata con paginazione token-based.</div>
-      <div style="margin-top:14px" class="list" id="runChooser"></div>
     </section>
 
     <section class="page active" data-page="run-results">
@@ -359,11 +554,15 @@
     const state = {
       page: 'run',
       config: load('jira-studio-config', {
-        jiraBaseUrl: '', jiraUser: '', jiraToken: '', jiraProjectKey: '', jiraApiVersion: '3', jiraPageSize: 50
+        jiraBaseUrl: '', jiraUser: '', jiraToken: '', jiraProjectKey: '', jiraApiVersion: '3', jiraPageSize: 50, sqlServerConnectionString: '', dailyScheduleTime: ''
       }),
       reports: load('jira-studio-reports', []),
+      editingReportId: null,
+      scheduleLog: { running: false, lastAutoRunKey: null, entries: [] },
       selected: new Set(),
       results: [],
+      activeResultGroup: '',
+      runPanelCollapsed: false,
       expandedResults: new Set(),
       statusHistoryCache: new Map(),
       statusHistoryModal: {
@@ -379,6 +578,9 @@
     const el = (id) => document.getElementById(id);
     const nav = el('nav');
     const connStatus = el('connStatus');
+    const jiraConnTestStatus = el('jiraConnTestStatus');
+    const sqlConnTestStatus = el('sqlConnTestStatus');
+    const scheduleRunStatus = el('scheduleRunStatus');
     const pages = [...document.querySelectorAll('.page')];
     const historyModal = el('historyModal');
 
@@ -399,12 +601,18 @@
 
     async function init() {
       try {
-        const [cfg, reports] = await Promise.all([
+        const [cfg, reports, scheduleLog] = await Promise.all([
           apiJson('/api/config'),
-          apiJson('/api/reports')
+          apiJson('/api/reports'),
+          apiJson('/api/schedule/log')
         ]);
         state.config = { ...state.config, ...cfg };
         state.reports = Array.isArray(reports) ? reports : [];
+        state.scheduleLog = {
+          running: Boolean(scheduleLog?.running),
+          lastAutoRunKey: scheduleLog?.lastAutoRunKey || null,
+          entries: Array.isArray(scheduleLog?.entries) ? scheduleLog.entries : []
+        };
       } catch {}
       el('jiraBaseUrl').value = state.config.jiraBaseUrl;
       el('jiraUser').value = state.config.jiraUser;
@@ -412,7 +620,9 @@
       el('jiraProjectKey').value = state.config.jiraProjectKey;
       el('jiraApiVersion').value = state.config.jiraApiVersion;
       el('jiraPageSize').value = state.config.jiraPageSize;
-      renderNav(); renderReports(); renderChooser(); renderResults();
+      el('sqlServerConnectionString').value = state.config.sqlServerConnectionString || '';
+      el('dailyScheduleTime').value = state.config.dailyScheduleTime || '';
+      renderNav(); renderReports(); renderChooser(); renderRunPanel(); renderResults(); renderScheduleLog();
     }
 
     function renderNav() {
@@ -436,8 +646,68 @@
       connStatus.style.borderColor = good ? 'rgba(22,163,74,0.16)' : 'rgba(202,138,4,0.18)';
     }
 
+    function setInlineStatus(node, state, text) {
+      if (!node) return;
+      node.dataset.state = state;
+      node.innerHTML = state === 'loading'
+        ? `<span class="spinner" aria-hidden="true"></span><span>${escapeHtml(text)}</span>`
+        : escapeHtml(text);
+    }
+
+    function formatTechnicalDetails(details, indent = '') {
+      if (!details) return '';
+      if (typeof details === 'string') return `${indent}${details.trim()}`;
+      if (Array.isArray(details)) {
+        return details.map(item => formatTechnicalDetails(item, indent)).filter(Boolean).join('\n');
+      }
+      if (typeof details !== 'object') return `${indent}${String(details)}`;
+      const lines = [];
+      for (const key of ['name', 'code', 'number', 'state', 'class', 'lineNumber', 'serverName', 'procName', 'line', 'message']) {
+        if (details[key] !== null && details[key] !== undefined && String(details[key]).trim() !== '') {
+          lines.push(`${indent}${key}: ${details[key]}`);
+        }
+      }
+      for (const key of ['originalError', 'cause', 'errors', 'precedingErrors']) {
+        if (details[key] === null || details[key] === undefined || details[key] === '' || (Array.isArray(details[key]) && details[key].length === 0)) continue;
+        lines.push(`${indent}${key}:`);
+        const nested = formatTechnicalDetails(details[key], `${indent}  `);
+        if (nested) lines.push(nested);
+      }
+      return lines.join('\n');
+    }
+
+    function renderRunPanel() {
+      const section = el('runPanelSection');
+      const body = el('runPanelBody');
+      const btn = el('toggleRunPanelBtn');
+      const indicator = el('runPanelIndicator');
+      if (!section || !body || !btn || !indicator) return;
+      body.classList.toggle('collapsed-body', state.runPanelCollapsed);
+      section.classList.toggle('collapsed', state.runPanelCollapsed);
+      btn.setAttribute('aria-expanded', String(!state.runPanelCollapsed));
+      indicator.textContent = state.runPanelCollapsed ? '▸' : '▾';
+      btn.onclick = () => {
+        state.runPanelCollapsed = !state.runPanelCollapsed;
+        renderRunPanel();
+      };
+    }
+
     function sortedReports(items = state.reports) {
       return [...items].sort((a, b) => String(a?.title || '').localeCompare(String(b?.title || ''), 'it', { sensitivity: 'base' }));
+    }
+
+    function reportGroupLabel(group) {
+      return String(group || '').trim() || 'Senza gruppo';
+    }
+
+    function groupedResults(items = state.results) {
+      const groups = new Map();
+      for (const report of sortedReports(items)) {
+        const group = reportGroupLabel(report.group);
+        if (!groups.has(group)) groups.set(group, []);
+        groups.get(group).push(report);
+      }
+      return [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0], 'it', { sensitivity: 'base' }));
     }
 
     function renderReports() {
@@ -445,10 +715,21 @@
       list.innerHTML = state.reports.length ? '' : '<div class="muted-box">Nessun report salvato.</div>';
       for (const r of sortedReports()) {
         const div = document.createElement('div');
-        div.className = 'item';
+        div.className = `item${state.editingReportId === r.id ? ' editing' : ''}`;
+        const badges = [];
+        if (r.exportEnabled) {
+          badges.push(`<span class="report-badge export" title="${escapeHtml(r.table || 'tabella non impostata')}">DB ${escapeHtml(r.table || 'export')}</span>`);
+        }
+        if (r.scheduledEnabled) {
+          badges.push(`<span class="report-badge schedule">Schedulato</span>`);
+        }
+        if (!badges.length) {
+          badges.push('<span class="report-badge muted">Nessun flag attivo</span>');
+        }
         div.innerHTML = `
           <div>
             <div><code>${escapeHtml(r.title)}</code> <span class="meta">${escapeHtml(r.group || 'senza gruppo')}</span></div>
+            <div class="report-badges">${badges.join('')}</div>
             <div class="meta">${escapeHtml(r.jql)}</div>
           </div>
           <div style="display:flex;gap:10px;align-items:center;">
@@ -457,18 +738,66 @@
             <button class="danger" data-del>Del</button>
           </div>
         `;
-        div.querySelector('[data-edit]').onclick = () => fillReportForm(r);
+        div.querySelector('[data-edit]').onclick = () => startEditReport(r);
         div.querySelector('[data-del]').onclick = async () => {
           await apiJson(`/api/reports/${r.id}`, { method: 'DELETE' });
           state.reports = state.reports.filter(x => x.id !== r.id);
           state.selected.delete(r.id);
+          if (state.editingReportId === r.id) clearReportForm();
           save('jira-studio-reports', state.reports);
           renderReports(); renderChooser();
         };
         list.appendChild(div);
       }
+      syncReportFormMode();
       const btn = el('runSelectedBtn');
       if (btn) btn.disabled = state.selected.size === 0;
+    }
+
+    function renderScheduleLog() {
+      const list = el('scheduleLogList');
+      if (!list) return;
+      const entries = Array.isArray(state.scheduleLog?.entries) ? state.scheduleLog.entries.slice(0, 5) : [];
+      if (!entries.length) {
+        list.innerHTML = '<div class="muted-box">Nessuna esecuzione ancora registrata.</div>';
+      } else {
+        list.innerHTML = entries.map(entry => {
+          const statusLabel = entry.status === 'ok'
+            ? 'Completata'
+            : entry.status === 'partial'
+              ? 'Parziale'
+              : entry.status === 'failed'
+                ? 'Fallita'
+                : entry.status === 'skipped'
+                  ? 'Saltata'
+                  : 'In corso';
+          const summary = entry.summary || {};
+          const details = [
+            `${summary.merged || 0} merge`,
+            `${summary.failed || 0} errori`,
+            `${summary.skipped || 0} saltati`
+          ].join(' · ');
+          return `
+            <div class="item" style="align-items:flex-start;">
+              <div style="min-width:0;">
+                <div><strong>${escapeHtml(statusLabel)}</strong> <span class="meta">${escapeHtml(entry.mode === 'auto' ? 'schedulata' : 'manuale')}</span></div>
+                <div class="meta">${formatDateTime(entry.startedAt)}${entry.finishedAt ? ` → ${formatDateTime(entry.finishedAt)}` : ''}</div>
+                <div class="meta">${escapeHtml(details)}</div>
+              </div>
+              <div class="pill">${escapeHtml(String(entry.results?.length || 0))}</div>
+            </div>
+          `;
+        }).join('');
+      }
+      if (scheduleRunStatus) {
+        setInlineStatus(
+          scheduleRunStatus,
+          state.scheduleLog?.running ? 'loading' : 'ok',
+          state.scheduleLog?.running ? 'Esecuzione in corso' : 'Pronto'
+        );
+      }
+      const runBtn = el('runScheduleNowBtn');
+      if (runBtn) runBtn.disabled = Boolean(state.scheduleLog?.running);
     }
 
     function renderChooser() {
@@ -514,7 +843,31 @@
         panels.innerHTML = '<div class="muted-box">Nessun risultato ancora. Esegui un report.</div>';
         return;
       }
-      for (const res of sortedReports(state.results)) {
+
+      const groups = groupedResults();
+      const availableGroups = groups.map(([group]) => group);
+      if (!availableGroups.includes(state.activeResultGroup)) {
+        state.activeResultGroup = availableGroups[0] || '';
+      }
+
+      if (groups.length > 1) {
+        const tabs = document.createElement('div');
+        tabs.className = 'tabs';
+        for (const [group, reports] of groups) {
+          const btn = document.createElement('button');
+          btn.className = `tab-btn ${group === state.activeResultGroup ? 'active' : ''}`;
+          btn.textContent = `${group} · ${reports.length}`;
+          btn.onclick = () => {
+            state.activeResultGroup = group;
+            renderResults();
+          };
+          tabs.appendChild(btn);
+        }
+        panels.appendChild(tabs);
+      }
+
+      const activeReports = groups.find(([group]) => group === state.activeResultGroup)?.[1] || [];
+      for (const res of activeReports) {
         const panel = document.createElement('div');
         panel.className = 'result-item';
         panel.innerHTML = renderResultPanel(res, state.expandedResults.has(res.id));
@@ -524,6 +877,13 @@
           else state.expandedResults.add(res.id);
           renderResults();
         };
+        const mergeBtn = panel.querySelector('[data-db-merge]');
+        if (mergeBtn) {
+          mergeBtn.onclick = async (event) => {
+            event.stopPropagation();
+            await mergeResult(res);
+          };
+        }
         panel.querySelectorAll('[data-status-history]').forEach(btn => {
           btn.onclick = async (event) => {
             event.stopPropagation();
@@ -537,16 +897,24 @@
     function renderResultPanel(res, expanded) {
       const rows = res.issues || [];
       const preview = res.request ? `<pre style="white-space:pre-wrap;margin:0">${escapeHtml(JSON.stringify(res.request, null, 2))}</pre>` : '';
+      const reportMeta = state.reports.find(r => r.id === res.id) || {};
+      const canMerge = Boolean(!res.dryRun && reportMeta.exportEnabled && String(reportMeta.table || '').trim() && String(state.config?.sqlServerConnectionString || '').trim());
       return `
         <button data-toggle-result style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border:0;background:rgba(255,255,255,0.92);cursor:pointer;font:inherit;text-align:left;">
           <span style="display:flex;align-items:center;gap:10px;min-width:0;">
             <span class="pill">${res.count}</span>
             <span style="font-weight:700;">${escapeHtml(res.title)}</span>
           </span>
-          <span class="small" style="flex-shrink:0;">${expanded ? '▾' : '▸'}</span>
+          <span style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+            ${reportMeta.exportEnabled ? `<span class="mini-badge">${escapeHtml(reportMeta.table || 'SQL')}</span>` : ''}
+            <span class="small">${expanded ? '▾' : '▸'}</span>
+          </span>
         </button>
         ${expanded ? `
           <div style="padding: 0 18px 18px; border-top: 1px solid rgba(15,23,42,0.08); background: rgba(248,250,252,0.72);">
+            <div class="actions" style="margin-top:14px;">
+              <button class="success" data-db-merge ${canMerge ? '' : 'disabled'}>${canMerge ? 'DB merge' : 'DB merge non disponibile'}</button>
+            </div>
             ${res.dryRun ? `<div class="result-box" style="margin-top:14px;"><div class="small" style="margin-bottom:8px;">Anteprima request Jira</div>${preview}</div>` : ''}
             <div class="result-box" style="margin-top:14px; margin-bottom:0;">
               ${rows.length ? `<table>
@@ -672,20 +1040,88 @@
       renderHistoryModal();
     }
 
-    async function fillReportForm(r) {
+    function syncReportFormMode() {
+      const addBtn = el('addReportBtn');
+      const cancelBtn = el('cancelEditBtn');
+      if (addBtn) addBtn.textContent = state.editingReportId ? 'Aggiorna report' : 'Salva report';
+      if (cancelBtn) cancelBtn.style.display = state.editingReportId ? 'inline-flex' : 'none';
+    }
+
+    function clearReportForm() {
+      state.editingReportId = null;
+      el('reportTitle').value = '';
+      el('reportGroup').value = '';
+      el('reportTable').value = '';
+      el('reportExportEnabled').checked = false;
+      el('reportScheduledEnabled').checked = false;
+      el('reportJql').value = '';
+      syncReportFormMode();
+    }
+
+    function startEditReport(r) {
       el('reportTitle').value = r.title;
       el('reportGroup').value = r.group || '';
+      el('reportTable').value = r.table || '';
+      el('reportExportEnabled').checked = Boolean(r.exportEnabled);
+      el('reportScheduledEnabled').checked = Boolean(r.scheduledEnabled);
       el('reportJql').value = r.jql;
+      state.editingReportId = r.id;
+      syncReportFormMode();
+      renderReports();
       state.page = 'reports'; renderNav();
-      await apiJson(`/api/reports/${r.id}`, { method: 'DELETE' });
-      state.reports = state.reports.filter(x => x.id !== r.id);
-      save('jira-studio-reports', state.reports);
-      renderReports(); renderChooser();
+      requestAnimationFrame(() => {
+        const titleInput = el('reportTitle');
+        if (titleInput) {
+          titleInput.focus({ preventScroll: true });
+          titleInput.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          titleInput.select?.();
+        }
+      });
+    }
+
+    async function refreshScheduleLog() {
+      try {
+        const data = await apiJson('/api/schedule/log');
+        state.scheduleLog = {
+          running: Boolean(data?.running),
+          lastAutoRunKey: data?.lastAutoRunKey || null,
+          lastRunAt: data?.lastRunAt || null,
+          entries: Array.isArray(data?.entries) ? data.entries : []
+        };
+      } catch {}
+      renderScheduleLog();
+    }
+
+    async function runScheduleNow() {
+      const btn = el('runScheduleNowBtn');
+      if (btn) btn.disabled = true;
+      setInlineStatus(scheduleRunStatus, 'loading', 'Avvio schedulazione...');
+      try {
+        const r = await fetch('/api/schedule/run', { method: 'POST' });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(data.error || 'Errore esecuzione schedulazione');
+        await refreshScheduleLog();
+        setInlineStatus(scheduleRunStatus, 'ok', 'Schedulazione eseguita');
+        setStatus('Schedulazione eseguita', true);
+      } catch (e) {
+        await refreshScheduleLog();
+        setInlineStatus(scheduleRunStatus, 'error', 'Schedulazione fallita');
+        setStatus('Schedulazione fallita', false);
+        alert(String(e.message || e));
+      } finally {
+        if (btn) btn.disabled = false;
+      }
     }
 
     async function testConfig() {
       const c = readConfig();
-      if (!c.jiraBaseUrl || !c.jiraUser || !c.jiraToken) return setStatus('Compila URL, user e token.', false);
+      const btn = el('testConfigBtn');
+      if (!c.jiraBaseUrl || !c.jiraUser || !c.jiraToken) {
+        setInlineStatus(jiraConnTestStatus, 'error', 'Compila URL, user e token.');
+        return setStatus('Compila URL, user e token.', false);
+      }
+      btn.disabled = true;
+      setInlineStatus(jiraConnTestStatus, 'loading', 'Verifica in corso...');
       try {
         const r = await fetch('/api/config/test', {
           method: 'POST',
@@ -694,10 +1130,42 @@
         });
         const data = await r.json();
         if (!r.ok) throw new Error(data.error || 'Errore test configurazione');
+        setInlineStatus(jiraConnTestStatus, 'ok', 'Connessione OK');
         setStatus('Connessione OK', true);
       } catch (e) {
+        setInlineStatus(jiraConnTestStatus, 'error', 'Connessione fallita');
         setStatus('Connessione fallita', false);
         alert(String(e.message || e));
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function testSqlConfig() {
+      const c = readConfig();
+      const btn = el('testSqlConfigBtn');
+      if (!c.sqlServerConnectionString) {
+        setInlineStatus(sqlConnTestStatus, 'error', 'Compila la connection string SQL Server.');
+        return setStatus('Compila la connection string SQL Server.', false);
+      }
+      btn.disabled = true;
+      setInlineStatus(sqlConnTestStatus, 'loading', 'Verifica in corso...');
+      try {
+        const r = await fetch('/api/config/test-sql', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(c)
+        });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.error || 'Errore test SQL Server');
+        setInlineStatus(sqlConnTestStatus, 'ok', 'Connessione SQL OK');
+        setStatus('Connessione SQL OK', true);
+      } catch (e) {
+        setInlineStatus(sqlConnTestStatus, 'error', 'Connessione SQL fallita');
+        setStatus('Connessione SQL fallita', false);
+        alert(String(e.message || e));
+      } finally {
+        btn.disabled = false;
       }
     }
 
@@ -708,7 +1176,9 @@
         jiraToken: el('jiraToken').value.trim(),
         jiraProjectKey: el('jiraProjectKey').value.trim(),
         jiraApiVersion: el('jiraApiVersion').value,
-        jiraPageSize: Number(el('jiraPageSize').value || 50)
+        jiraPageSize: Number(el('jiraPageSize').value || 50),
+        sqlServerConnectionString: el('sqlServerConnectionString').value.trim(),
+        dailyScheduleTime: el('dailyScheduleTime').value
       };
     }
 
@@ -730,6 +1200,12 @@
       if (!c.jiraBaseUrl || !c.jiraUser || !c.jiraToken) return setStatus('Configura Jira prima di eseguire.', false);
       const selected = state.reports.filter(r => state.selected.has(r.id));
       if (!selected.length) return alert('Seleziona almeno un report.');
+      state.results = [];
+      state.activeResultGroup = '';
+      state.expandedResults = new Set();
+      state.runPanelCollapsed = true;
+      renderRunPanel();
+      renderResults();
       setStatus(dryRun ? 'Creo anteprima chiamata...' : 'Esecuzione in corso...', true);
       try {
         const reportIds = selected.map(r => r.id);
@@ -741,8 +1217,9 @@
         const data = await r.json();
         if (!r.ok) throw new Error((data.error || 'Errore esecuzione report') + (data.debug ? `\nDEBUG: ${JSON.stringify(data.debug)}` : ''));
         state.results = dryRun
-          ? (data.preview || []).map(p => ({ id: p.id, title: p.title, jql: p.jql, count: 0, issues: [], request: p.request, dryRun: true }))
+          ? (data.preview || []).map(p => ({ id: p.id, title: p.title, group: p.group || '', jql: p.jql, count: 0, issues: [], request: p.request, dryRun: true }))
           : (data.results || []);
+        state.activeResultGroup = groupedResults(state.results)[0]?.[0] || '';
         state.expandedResults = new Set();
         renderResults();
         setStatus(dryRun ? 'Anteprima pronta' : 'Report completati', true);
@@ -764,15 +1241,31 @@
     async function addReport() {
       const title = el('reportTitle').value.trim();
       const group = el('reportGroup').value.trim();
+      const table = el('reportTable').value.trim();
+      const exportEnabled = el('reportExportEnabled').checked;
+      const scheduledEnabled = el('reportScheduledEnabled').checked;
       const jql = el('reportJql').value.trim();
       if (!title || !jql) return alert('Titolo e JQL sono obbligatori.');
-      const report = await apiJson('/api/reports', {
-        method: 'POST',
-        body: JSON.stringify({ title, group, jql })
-      });
-      state.reports.push(report);
+      if (exportEnabled && !table) return alert('Se abiliti export devi indicare una table.');
+      const payload = { title, group, jql, table, exportEnabled, scheduledEnabled };
+      const report = state.editingReportId
+        ? await apiJson(`/api/reports/${state.editingReportId}`, {
+            method: 'PUT',
+            body: JSON.stringify(payload)
+          })
+        : await apiJson('/api/reports', {
+            method: 'POST',
+            body: JSON.stringify(payload)
+          });
+      if (state.editingReportId) {
+        const idx = state.reports.findIndex(r => r.id === state.editingReportId);
+        if (idx >= 0) state.reports[idx] = report;
+        else state.reports.push(report);
+      } else {
+        state.reports.push(report);
+      }
       save('jira-studio-reports', state.reports);
-      el('reportTitle').value = ''; el('reportGroup').value = ''; el('reportJql').value = '';
+      clearReportForm();
       renderReports(); renderChooser();
     }
 
@@ -792,23 +1285,24 @@
         if (!Array.isArray(data)) return alert('Formato JSON non valido.');
         state.reports = [];
         for (const r of data) {
-          const report = await apiJson('/api/reports', { method: 'POST', body: JSON.stringify({ title: r.title, group: r.group || '', jql: r.jql, id: r.id }) });
+          const report = await apiJson('/api/reports', {
+            method: 'POST',
+            body: JSON.stringify({
+              title: r.title,
+              group: r.group || '',
+              jql: r.jql,
+              id: r.id,
+              table: r.table || '',
+              exportEnabled: Boolean(r.exportEnabled),
+              scheduledEnabled: Boolean(r.scheduledEnabled)
+            })
+          });
           state.reports.push(report);
         }
         save('jira-studio-reports', state.reports);
         renderReports(); renderChooser();
       };
       input.click();
-    }
-
-    function resetAll() {
-      if (!confirm('Vuoi davvero cancellare configurazione, report e risultati?')) return;
-      localStorage.removeItem('jira-studio-config');
-      localStorage.removeItem('jira-studio-reports');
-      state.config = { jiraBaseUrl:'', jiraUser:'', jiraToken:'', jiraProjectKey:'', jiraApiVersion:'3', jiraPageSize:50 };
-      state.reports = []; state.selected.clear(); state.results = []; state.expandedResults = new Set();
-      init();
-      setStatus('Reset completato', true);
     }
 
     function issueBrowseUrl(key) {
@@ -826,9 +1320,44 @@
 
     function escapeHtml(str) { return String(str).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','\'' :'&#39;','"':'&quot;'}[c])); }
 
+    async function mergeResult(res) {
+      const report = state.reports.find(r => r.id === res.id);
+      const c = readConfig();
+      if (!report) return alert('Report non trovato.');
+      if (!report.exportEnabled) return alert('Questo report non ha export abilitato.');
+      if (!report.table) return alert('Imposta una table di destinazione sul report.');
+      if (!c.sqlServerConnectionString) return alert('Imposta la SQL Server connection string nella configurazione.');
+      if (!confirm(`Eseguire DB merge su ${report.table}? I record mancanti verranno cancellati.`)) return;
+      try {
+        setStatus(`DB merge in corso per ${report.title}...`, true);
+        const r = await fetch(`/api/reports/${encodeURIComponent(res.id)}/db-merge`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ config: c, result: res })
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) {
+          const err = new Error(data.error || 'Errore DB merge');
+          err.details = data.details ?? data.body ?? null;
+          throw err;
+        }
+        setStatus(`DB merge completato su ${data.targetTable || report.table} (${data.mergedRows ?? 0} righe)`, true);
+      } catch (e) {
+        setStatus('DB merge fallito', false);
+        const tech = formatTechnicalDetails(e?.details);
+        alert(tech ? `${String(e.message || e)}\n\nDettagli tecnici:\n${tech}` : String(e.message || e));
+      }
+    }
+
     el('saveConfigBtn').onclick = saveConfig;
     el('testConfigBtn').onclick = testConfig;
+    el('testSqlConfigBtn').onclick = testSqlConfig;
     el('addReportBtn').onclick = addReport;
+    el('cancelEditBtn').onclick = () => {
+      clearReportForm();
+      renderReports();
+    };
+    el('runScheduleNowBtn').onclick = runScheduleNow;
     el('exportReportsBtn').onclick = exportReports;
     el('importReportsBtn').onclick = importReports;
     el('runSelectedBtn').onclick = () => runSelected(false);
@@ -842,7 +1371,6 @@
       renderReports();
       renderChooser();
     };
-    el('resetAllBtn').onclick = resetAll;
     el('closeHistoryModalBtn').onclick = closeStatusHistory;
     historyModal.addEventListener('click', (event) => {
       if (event.target === historyModal) closeStatusHistory();
@@ -853,6 +1381,9 @@
 
     init();
     renderHistoryModal();
+    setInterval(() => {
+      if (state.page === 'config') refreshScheduleLog();
+    }, 60_000);
   </script>
 </body>
 </html>
